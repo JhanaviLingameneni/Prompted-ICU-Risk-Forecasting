@@ -41,12 +41,19 @@ class DataLoader:
         """
         df = pd.read_csv(patient_file)
 
+        # Clean time into minutes since.
+        def to_minutes(time_str):
+            h, m = map(int, time_str.split(':'))
+            return h * 60 + m
+
+        df["Time"] = df["Time"].apply(to_minutes)
+
         # Extract RecordID and remove it. We'll convert it into its own column.
         recordid = df.loc[df["Parameter"] == "RecordID", "Value"].values[0]
         df = df[df["Parameter"] != "RecordID"]
 
         # Pivot the data to have parameters as columns and timestamps as rows
-        df = df.pivot(index="Time", columns="Parameter", values="Value")
+        df = df.pivot_table(index="Time", columns="Parameter", values="Value", aggfunc='mean')
 
         # Convert to DataArray and add RecordID as a new dimension
         ds = df.to_xarray().expand_dims(RecordID=[int(recordid)])
@@ -68,6 +75,7 @@ class DataLoader:
 
         Returns:
             pd.DataFrame: A DataFrame containing the processed patient data.
+            The shape of the DataFrame will be (record_id, time, param1, param2, ..., survival).
         """
         dir_path = os.path.join("..", "data", f"set-{self.data_set}")
         fp = glob.glob(os.path.join(dir_path, "*.txt"))

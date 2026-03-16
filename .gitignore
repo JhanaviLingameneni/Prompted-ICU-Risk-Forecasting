@@ -290,4 +290,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Temporary files
+temp.txt
+
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,jupyternotebooks,macos,windows,linux,archlinuxpackages

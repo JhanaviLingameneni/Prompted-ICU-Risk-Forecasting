@@ -27,7 +27,7 @@ class DataLoader:
             raise ValueError('data_set must be one of "a", "b", or "c"')
 
         self.data_set = data_set
-        self._data_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+        self._data_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
 
 
     def clean_patient_data(self, patient_file: str) -> pd.DataFrame:
@@ -86,12 +86,11 @@ class DataLoader:
         patient_data = []
 
         for f in fp:
-            print(f"Loading {f}...")
             patient_data.append(self.clean_patient_data(f))
 
         df_all = pd.concat(patient_data, ignore_index=True)
 
-        # Grab all vital columns
+        # Grab all vital columns. Exclude general descriptors.
         vital_columns = [c for c in df_all.columns if c not in self.GENERAL_DESCRIPTORS]
 
         # Fill any remaining missing values using global medians for each vital.

@@ -7,13 +7,15 @@ patient data and outcomes from the PhysioNet Challenge 2012 dataset.
 import glob
 import os
 import pandas as pd
-import xarray as xr
 
 
 class DataLoader:
     """
     DataLoader is responsible for loading and processing the patient data and outcomes.
     """
+
+    # As per dataset description, these are the general descriptors that are not vitals.
+    GENERAL_DESCRIPTORS = { "Time", "RecordID", "Age", "Gender", "Height", "ICUType", "Weight" }
 
     def __init__(self, data_set: str):
         """
@@ -25,11 +27,10 @@ class DataLoader:
             raise ValueError('data_set must be one of "a", "b", or "c"')
 
         self.data_set = data_set
-        # Outcomes with RecordID as indexed DataArray for easy merging with patient data
-        self.outcomes = self._load_outcomes()
+        self._data_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 
 
-    def clean_patient_data(self, patient_file: str) -> xr.Dataset:
+    def clean_patient_data(self, patient_file: str) -> pd.DataFrame:
         """
         Cleans a single patients data.
 
@@ -37,7 +38,8 @@ class DataLoader:
             patient_file (str): The path to the patient's data file.
 
         Returns:
-            xr.Dataset: The cleaned dataset.
+            pd.DataFrame: The cleaned patient time series with columns:
+            RecordID, Time, and one column per vital sign.
         """
         df = pd.read_csv(patient_file)
 
@@ -55,29 +57,31 @@ class DataLoader:
         # Pivot the data to have parameters as columns and timestamps as rows
         df = df.pivot_table(index="Time", columns="Parameter", values="Value", aggfunc='mean')
 
-        # Convert to DataArray and add RecordID as a new dimension
-        ds = df.to_xarray().expand_dims(RecordID=[int(recordid)])
+        # Per dataset description. -1 means it is missing value
+        df = df.mask(df == -1)
+        patient_means = df.mean(axis=0, skipna=True)
+        df = df.fillna(patient_means)
 
-        # Remove records with missing values
-        ds = ds.where(ds != -1)
-
-        # Fill missing values with the mean of that patient
-        patient_means = ds.mean(dim="Time", skipna=True)
-
-        return ds.fillna(patient_means)
+        # Flatten to a tidy table for concatenation across all patients.
+        df = df.reset_index()
+        df["RecordID"] = int(recordid)
+        return df
 
 
 
     def process_dataset(self) -> pd.DataFrame:
         """
         Loads and processes the patient data from the specified directory.
-        Each set is expected to reside in a directory named "set-a", "set-b", or "set-c" under the data directory.
+        Each set is expected to reside in a directory named
+        "set-a", "set-b", or "set-c" under the data directory.
 
         Returns:
             pd.DataFrame: A DataFrame containing the processed patient data.
-            The shape of the DataFrame will be (record_id, time, param1, param2, ..., survival).
+            The shape of the DataFrame will be (record_id, vitals..., aggregated_vitals..., survival),
+            where each time-varying vital is expanded into four features:
+            *_mean, *_median, *_min, and *_max.
         """
-        dir_path = os.path.join("..", "data", f"set-{self.data_set}")
+        dir_path = os.path.join(self._data_root, f"set-{self.data_set}")
         fp = glob.glob(os.path.join(dir_path, "*.txt"))
         patient_data = []
 
@@ -85,21 +89,31 @@ class DataLoader:
             print(f"Loading {f}...")
             patient_data.append(self.clean_patient_data(f))
 
-        ds_all = xr.concat(patient_data, dim="RecordID")
+        df_all = pd.concat(patient_data, ignore_index=True)
 
-        # Clean rest of missing data not found otherwise in timeseries by filling
-        # with global median across all patients.
-        global_means = ds_all.median(dim=["RecordID", "Time"], skipna=True)
-        ds_all = ds_all.fillna(global_means)
+        # Grab all vital columns
+        vital_columns = [c for c in df_all.columns if c not in self.GENERAL_DESCRIPTORS]
 
-        ds_all = ds_all.merge(self.outcomes)
+        # Fill any remaining missing values using global medians for each vital.
+        global_medians = df_all[vital_columns].median(axis=0, skipna=True)
+        df_all[vital_columns] = df_all[vital_columns].fillna(global_medians)
 
-        # Clean the data and convert back to DataFrame for easier downstream work with scikit-learn and pandas.
-        return ds_all.to_dataframe()
+        # Aggregate each vital over time into one row per patient.
+        grouped = df_all.groupby("RecordID")[vital_columns]
+        df_mean = grouped.mean().add_suffix("_mean")
+        df_median = grouped.median().add_suffix("_median")
+        df_min = grouped.min().add_suffix("_min")
+        df_max = grouped.max().add_suffix("_max")
 
-    def _load_outcomes(self) -> xr.DataArray:
+        df_features = pd.concat([df_mean, df_median, df_min, df_max], axis=1)
+        df_features = df_features.join(self._load_outcomes(), how="left")
+
+        return df_features
+
+    def _load_outcomes(self) -> pd.DataFrame:
         """
         Load survival outcomes for the selected dataset.
+        -1 survival indicates the patient survived. All other numbers indicate days until death.
 
         Reads the outcomes file that corresponds to this loader's dataset
         identifier and returns only the columns needed for supervised learning.
@@ -111,9 +125,9 @@ class DataLoader:
                       spent less than 48 hours in the ICU.
 
         Returns:
-            xr.DataArray: A DataArray containing RecordID and Survival.
+            pd.DataFrame: A DataFrame indexed by RecordID containing Survival.
         """
-        outcomes_file_path = os.path.join("..", "data", "outcomes", f"outcomes-{self.data_set}.txt")
+        outcomes_file_path = os.path.join(self._data_root, "outcomes", f"outcomes-{self.data_set}.txt")
         # We only care about RecordID and Survival
         df = pd.read_csv(outcomes_file_path, usecols=["RecordID", "Survival"])
-        return df.set_index("RecordID").to_xarray()
+        return df.set_index("RecordID")

@@ -17,7 +17,7 @@ class DataLoader:
 
     # As per dataset description, these are the general descriptors that are not vitals.
     GENERAL_DESCRIPTORS = { "Time", "RecordID", "Age", "Gender", "Height", "ICUType", "Weight" }
-    BIOMETRICS = GENERAL_DESCRIPTORS - { "Time" }
+    BIOMETRICS = GENERAL_DESCRIPTORS - {"Time", "ICUType"}
 
     def __init__(self, data_set: str):
         """
@@ -55,6 +55,7 @@ class DataLoader:
         # Extract RecordID and remove it. We'll convert it into its own column.
         recordid = df.loc[df["Parameter"] == "RecordID", "Value"].values[0]
         df = df[df["Parameter"] != "RecordID"]
+        # Remove ICUType, we don't care about it
         df = df[df["Parameter"] != "ICUType"]
 
         # Pivot the data to have parameters as columns and timestamps as rows
@@ -115,7 +116,7 @@ class DataLoader:
         biometric_columns = [c for c in df_all.columns if c in self.BIOMETRICS]
 
         # Fill any remaining missing values using global medians for each vital.
-        global_medians = df_all[vital_columns].median(axis=0, skipna=True)
+        global_medians = df_all[vital_columns].median()
         df_all[vital_columns] = df_all[vital_columns].fillna(global_medians)
 
         # Aggregate each vital over time into one row per patient.
@@ -124,11 +125,23 @@ class DataLoader:
         df_median = grouped.median().add_suffix("_median")
         df_min = grouped.min().add_suffix("_min")
         df_max = grouped.max().add_suffix("_max")
+        df_std = grouped.std(ddof=0).add_suffix("_std")
 
-        df_features = pd.concat([df_mean, df_median, df_min, df_max], axis=1)
+        # Fill missing biometrics: median for continuous, mode for Gender.
+        # Would love to drop it but too many records are missing it.
+        continuous_biometrics = [c for c in biometric_columns if c not in {"RecordID", "Gender"}]
+        bio_medians = df_all[continuous_biometrics].median()
+        df_all[continuous_biometrics] = df_all[continuous_biometrics].fillna(bio_medians)
+        gender_mode = df_all["Gender"].mode()[0]
+        df_all["Gender"] = df_all["Gender"].fillna(gender_mode)
+
+        df_features = pd.concat([df_mean, df_median, df_min, df_max, df_std], axis=1)
 
         # Add the biometrics, unaggregated.
         df_features = df_features.join(df_all[biometric_columns].drop_duplicates(subset="RecordID").set_index("RecordID"), how="left")
+
+        # Sort columns otherwise models complain
+        df_features = df_features[sorted(df_features.columns)]
         df_features = self.scale_dataset(df_features)
 
         return df_features, self._load_outcomes()

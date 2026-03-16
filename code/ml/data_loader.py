@@ -7,7 +7,6 @@ patient data and outcomes from the PhysioNet Challenge 2012 dataset.
 import glob
 import os
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 
 class DataLoader:
@@ -71,21 +70,6 @@ class DataLoader:
         df["RecordID"] = int(recordid)
         return df
 
-    def scale_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Scales the dataset using StandardScaler.
-
-        Args:
-            df (pd.DataFrame): The input DataFrame to scale.
-        Returns:
-            pd.DataFrame: The scaled DataFrame.
-        """
-        scaler = StandardScaler()
-        scaled_values = scaler.fit_transform(df)
-        scaled_df = pd.DataFrame(scaled_values, columns=df.columns, index=df.index)
-        return scaled_df
-
-
     def process_dataset(self) -> pd.DataFrame:
         """
         Loads and processes the patient data from the specified directory.
@@ -140,9 +124,8 @@ class DataLoader:
         # Add the biometrics, unaggregated.
         df_features = df_features.join(df_all[biometric_columns].drop_duplicates(subset="RecordID").set_index("RecordID"), how="left")
 
-        # Sort columns otherwise models complain
+        # Sort columns to guarantee consistent feature order across datasets.
         df_features = df_features[sorted(df_features.columns)]
-        df_features = self.scale_dataset(df_features)
 
         return df_features, self._load_outcomes()
 
@@ -164,6 +147,9 @@ class DataLoader:
             pd.DataFrame: A DataFrame indexed by RecordID containing Survival.
         """
         outcomes_file_path = os.path.join(self._data_root, "outcomes", f"outcomes-{self.data_set}.txt")
+
         # We only care about RecordID and Survival
-        df = pd.read_csv(outcomes_file_path, usecols=["RecordID", "Survival"])
+        df = pd.read_csv(outcomes_file_path, usecols=["RecordID", "Survival", "In-hospital_death"])
+        df["Death"] = ((df["Survival"] != -1) | (df["In-hospital_death"] == 1)).astype(int)
+        df = df.drop(columns=["Survival", "In-hospital_death"])
         return df.set_index("RecordID")

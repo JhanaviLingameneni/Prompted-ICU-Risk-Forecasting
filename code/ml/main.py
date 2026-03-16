@@ -1,8 +1,23 @@
-from train import linear_regression, random_forest
+"""
+Entrypoint
+"""
+
+from train import logistic_regression, random_forest, xgboost
 
 if __name__ == "__main__":
-    # linear_regression()
+    print("Logistic Regression")
+    print("-------------------")
+    logistic_regression()
+    print("\n")
+
+    print("Random Forest")
+    print("-------------------")
     random_forest()
+    print("\n")
+
+    print("XG Boost")
+    print("-------------------")
+    xgboost()
 
 # if __name__ == "__main__":
 #     from data_loader import DataLoader

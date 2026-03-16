@@ -1,41 +1,68 @@
 """
 Module contains the training code for the ML models.
 """
-
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
+from xgboost import XGBClassifier
 from data_loader import DataLoader
 
+df_x_train, df_y_train = DataLoader(data_set="a").process_dataset()
+df_x_test, df_y_test = DataLoader(data_set="b").process_dataset()
 
-def linear_regression():
+
+def logistic_regression():
     """
-    Trains a linear regression model to predict survival days.
+    Trains a logistic regression model.
     """
 
-    df_x_train, df_y_train = DataLoader(data_set="a").process_dataset()
-    df_x_test, df_y_test = DataLoader(data_set="b").process_dataset()
+    y_train = df_y_train.values.ravel()
+    y_test = df_y_test.values.ravel()
 
-    model = LinearRegression()
-    model.fit(df_x_train, df_y_train.values.flatten())
+    scaler = StandardScaler()
+    x_train_scaled = scaler.fit_transform(df_x_train)
+    x_test_scaled = scaler.transform(df_x_test)
 
-    y_pred = model.predict(df_x_test)
+    model = LogisticRegression(max_iter=1000)
+    model.fit(x_train_scaled, y_train)
 
-    print("Linear Regression MAE:", mean_absolute_error(df_y_test, y_pred))
-    print("Linear Regression RMSE:", mean_squared_error(df_y_test, y_pred))
-    print("Linear Regression R²:", r2_score(df_y_test, y_pred))
+    y_pred = model.predict(x_test_scaled)
+    y_prob = model.predict_proba(x_test_scaled)[:, 1]
+
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("ROC-AUC:", roc_auc_score(y_test, y_prob))
 
 def random_forest():
     """
-    Trains a random forest model to predict survival days.
+    Trains a random forest model.
     """
-    rf = RandomForestRegressor(n_estimators=200)
-    df_x_train, df_y_train = DataLoader(data_set="a").process_dataset()
-    df_x_test, df_y_test = DataLoader(data_set="b").process_dataset()
+    rf = RandomForestClassifier()
 
-    rf.fit(df_x_train, df_y_train.values.flatten())
+    y_train = df_y_train.values.ravel()
+    y_test = df_y_test.values.ravel()
+
+    rf.fit(df_x_train, y_train)
     rf_pred = rf.predict(df_x_test)
+    rf_prob = rf.predict_proba(df_x_test)[:, 1]
 
-    print("Random Forest MAE:", mean_absolute_error(df_y_test, rf_pred))
-    print("Random Forest RMSE:", mean_squared_error(df_y_test, rf_pred))
-    print("Random Forest R²:", r2_score(df_y_test, rf_pred))
+    print("Random Forest Accuracy:", accuracy_score(y_test, rf_pred))
+    print("ROC-AUC:", roc_auc_score(y_test, rf_prob))
+
+def xgboost():
+    """
+    Trains an xgboost model.
+    """
+
+    xgb = XGBClassifier()
+
+
+    y_train = df_y_train.values.ravel()
+    y_test = df_y_test.values.ravel()
+
+    xgb.fit(df_x_train, y_train)
+    xgb_pred = xgb.predict(df_x_test)
+    xgb_prob = xgb.predict_proba(df_x_test)[:, 1]
+
+    print("XGBoost Accuracy:", accuracy_score(y_test, xgb_pred))
+    print("XGBoost ROC-AUC:", roc_auc_score(y_test, xgb_prob))

@@ -3,7 +3,7 @@ if __name__ == "__main__":
 
     # Example usage
     data_loader = DataLoader(data_set="a")
-    df = data_loader.process_dataset()
+    df, y = data_loader.process_dataset()
     print(df.head())
 
     with open("temp.txt", "w", encoding="utf-8") as temp_file:

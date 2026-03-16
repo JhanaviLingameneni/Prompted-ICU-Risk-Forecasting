@@ -7,6 +7,7 @@ patient data and outcomes from the PhysioNet Challenge 2012 dataset.
 import glob
 import os
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 
 class DataLoader:
@@ -16,6 +17,7 @@ class DataLoader:
 
     # As per dataset description, these are the general descriptors that are not vitals.
     GENERAL_DESCRIPTORS = { "Time", "RecordID", "Age", "Gender", "Height", "ICUType", "Weight" }
+    BIOMETRICS = GENERAL_DESCRIPTORS - { "Time" }
 
     def __init__(self, data_set: str):
         """
@@ -53,6 +55,7 @@ class DataLoader:
         # Extract RecordID and remove it. We'll convert it into its own column.
         recordid = df.loc[df["Parameter"] == "RecordID", "Value"].values[0]
         df = df[df["Parameter"] != "RecordID"]
+        df = df[df["Parameter"] != "ICUType"]
 
         # Pivot the data to have parameters as columns and timestamps as rows
         df = df.pivot_table(index="Time", columns="Parameter", values="Value", aggfunc='mean')
@@ -67,6 +70,19 @@ class DataLoader:
         df["RecordID"] = int(recordid)
         return df
 
+    def scale_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Scales the dataset using StandardScaler.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame to scale.
+        Returns:
+            pd.DataFrame: The scaled DataFrame.
+        """
+        scaler = StandardScaler()
+        scaled_values = scaler.fit_transform(df)
+        scaled_df = pd.DataFrame(scaled_values, columns=df.columns, index=df.index)
+        return scaled_df
 
 
     def process_dataset(self) -> pd.DataFrame:
@@ -76,10 +92,13 @@ class DataLoader:
         "set-a", "set-b", or "set-c" under the data directory.
 
         Returns:
-            pd.DataFrame: A DataFrame containing the processed patient data.
-            The shape of the DataFrame will be (record_id, vitals..., aggregated_vitals..., survival),
+            (pd.DataFrame, pd.DataFrame): A tuple containing the processed
+            patient data and the corresponding outcomes.
+            The shape of features is (record_id, vitals..., aggregated_vitals..., survival),
             where each time-varying vital is expanded into four features:
             *_mean, *_median, *_min, and *_max.
+            Corresponding outcomes is a DataFrame indexed by RecordID containing Survival.
+             -1 indicates patient survived.
         """
         dir_path = os.path.join(self._data_root, f"set-{self.data_set}")
         fp = glob.glob(os.path.join(dir_path, "*.txt"))
@@ -92,6 +111,8 @@ class DataLoader:
 
         # Grab all vital columns. Exclude general descriptors.
         vital_columns = [c for c in df_all.columns if c not in self.GENERAL_DESCRIPTORS]
+        # Grab biometric columns, these should not be aggregated
+        biometric_columns = [c for c in df_all.columns if c in self.BIOMETRICS]
 
         # Fill any remaining missing values using global medians for each vital.
         global_medians = df_all[vital_columns].median(axis=0, skipna=True)
@@ -105,9 +126,12 @@ class DataLoader:
         df_max = grouped.max().add_suffix("_max")
 
         df_features = pd.concat([df_mean, df_median, df_min, df_max], axis=1)
-        df_features = df_features.join(self._load_outcomes(), how="left")
 
-        return df_features
+        # Add the biometrics, unaggregated.
+        df_features = df_features.join(df_all[biometric_columns].drop_duplicates(subset="RecordID").set_index("RecordID"), how="left")
+        df_features = self.scale_dataset(df_features)
+
+        return df_features, self._load_outcomes()
 
     def _load_outcomes(self) -> pd.DataFrame:
         """

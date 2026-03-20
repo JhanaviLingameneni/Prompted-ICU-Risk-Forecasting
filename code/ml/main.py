@@ -2,8 +2,9 @@
 Entrypoint
 """
 
-from train import logistic_regression, random_forest
+from train import logistic_regression, random_forest, compare_models
 
 if __name__ == "__main__":
-    logistic_regression()
-    random_forest()
+    lr = logistic_regression()
+    rf = random_forest()
+    compare_models([("Logistic Regression", lr), ("Random Forest", rf)])

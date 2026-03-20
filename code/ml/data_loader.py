@@ -145,6 +145,8 @@ class DataLoader:
 
         Returns:
             pd.DataFrame: A DataFrame indexed by RecordID containing Survival.
+                          Death is a binary column where 1 indicates risk and 0 indicates
+                          no immediate risk.
         """
         outcomes_file_path = os.path.join(self._data_root, "outcomes", f"outcomes-{self.data_set}.txt")
 

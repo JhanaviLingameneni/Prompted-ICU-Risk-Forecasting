@@ -7,6 +7,7 @@ patient data and outcomes from the PhysioNet Challenge 2012 dataset.
 import glob
 import os
 import pandas as pd
+from imblearn.under_sampling import RandomUnderSampler
 
 
 class DataLoader:
@@ -70,11 +71,15 @@ class DataLoader:
         df["RecordID"] = int(recordid)
         return df
 
-    def process_dataset(self) -> pd.DataFrame:
+    def process_dataset(self, undersample: bool = False) -> pd.DataFrame:
         """
         Loads and processes the patient data from the specified directory.
         Each set is expected to reside in a directory named
         "set-a", "set-b", or "set-c" under the data directory.
+
+        Args:
+            undersample: Whether to apply random undersampling on the majority
+                class. This should generally be enabled only for training data.
 
         Returns:
             (pd.DataFrame, pd.DataFrame): A tuple containing the processed
@@ -127,7 +132,14 @@ class DataLoader:
         # Sort columns to guarantee consistent feature order across datasets.
         df_features = df_features[sorted(df_features.columns)]
 
-        return df_features, self._load_outcomes()
+        outcomes = self._load_outcomes()
+
+        if undersample:
+            # Apply undersampling only when explicitly requested (e.g., train split).
+            rus = RandomUnderSampler(sampling_strategy="majority", random_state=42)
+            return rus.fit_resample(df_features, outcomes)
+
+        return df_features, outcomes
 
     def _load_outcomes(self) -> pd.DataFrame:
         """

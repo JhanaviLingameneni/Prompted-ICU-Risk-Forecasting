@@ -13,9 +13,9 @@ from sklearn.model_selection import GridSearchCV, PredefinedSplit
 from data_loader import DataLoader
 
 
-df_x_train, df_y_train = DataLoader(data_set="a").process_dataset()
-df_x_test, df_y_test = DataLoader(data_set="b").process_dataset()
-df_x_val, df_y_val = DataLoader(data_set="c").process_dataset()
+df_x_train, df_y_train = DataLoader(data_set="a").process_dataset(undersample=True)
+df_x_test, df_y_test = DataLoader(data_set="b").process_dataset(undersample=False)
+df_x_val, df_y_val = DataLoader(data_set="c").process_dataset(undersample=False)
 
 scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(df_x_train)
@@ -32,19 +32,12 @@ def logistic_regression() -> LogisticRegression:
     model = LogisticRegression(random_state=42)
 
     # Use validation set to tune hyperparamters
-    param_grid = [
-        {
-            "C": [*np.logspace(-4, 4, 20), 1, 10, 100],
-            "solver": ["lbfgs", "newton-cholesky", "liblinear", "sag", "saga"],
-            "max_iter": [1500, 2000, 3000],
-        },
-        {
-            "C": [*np.logspace(-4, 4, 20), 1, 10, 100],
-            "solver": ["saga"],
-            "l1_ratio": np.arange(0, 1.1, 0.1),
-            "max_iter": [1500, 2000, 3000],
-        },
-    ]
+    param_grid = {
+        "C": np.logspace(-3, 3, 13),
+        "solver": ["lbfgs", "newton-cholesky", "liblinear"],
+        "max_iter": [500, 1000, 2000, 3000, 4000],
+    }
+
     best_model = hyperparameter_tuning(
         model,
         x_train_scaled,
@@ -67,7 +60,7 @@ def random_forest() -> RandomForestClassifier:
         "n_estimators": range(50, 201, 50),
         "max_features": ["sqrt", "log2"],
         "min_samples_split": range(2, 11, 2),
-        "max_depth": [None, 10, 20]
+        "max_depth": [None, 10, 20, 100]
     }
 
     # Use validation set to tune hyperparamters

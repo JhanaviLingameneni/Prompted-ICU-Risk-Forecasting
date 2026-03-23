@@ -55,8 +55,6 @@ class DataLoader:
         # Extract RecordID and remove it. We'll convert it into its own column.
         recordid = df.loc[df["Parameter"] == "RecordID", "Value"].values[0]
         df = df[df["Parameter"] != "RecordID"]
-        # Remove ICUType, we don't care about it
-        df = df[df["Parameter"] != "ICUType"]
 
         # Pivot the data to have parameters as columns and timestamps as rows
         df = df.pivot_table(index="Time", columns="Parameter", values="Value", aggfunc='mean')
@@ -101,6 +99,7 @@ class DataLoader:
 
         # Grab all vital columns. Exclude general descriptors.
         vital_columns = [c for c in df_all.columns if c not in self.GENERAL_DESCRIPTORS]
+
         # Grab biometric columns, these should not be aggregated
         biometric_columns = [c for c in df_all.columns if c in self.BIOMETRICS]
 
@@ -126,6 +125,11 @@ class DataLoader:
 
         df_features = pd.concat([df_mean, df_median, df_min, df_max, df_std], axis=1)
 
+        # One-hot encode ICUType
+        icu_dummies = pd.get_dummies(df_all[["RecordID", "ICUType"]], columns=["ICUType"], dummy_na=True)
+        icu_dummies = icu_dummies.drop_duplicates(subset="RecordID").set_index("RecordID")
+        df_features = df_features.join(icu_dummies)
+
         # Add the biometrics, unaggregated.
         df_features = df_features.join(df_all[biometric_columns].drop_duplicates(subset="RecordID").set_index("RecordID"), how="left")
 
@@ -135,7 +139,6 @@ class DataLoader:
         outcomes = self._load_outcomes()
 
         if undersample:
-            # Apply undersampling only when explicitly requested (e.g., train split).
             rus = RandomUnderSampler(sampling_strategy="majority", random_state=42)
             return rus.fit_resample(df_features, outcomes)
 

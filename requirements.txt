@@ -1,6 +1,10 @@
+imbalanced-learn==0.14.1
+keras==3.13.2
+matplotlib==3.10.8
 numpy==2.4.1
 pandas==3.0.0
+scikeras==0.13.0
 scikit-learn==1.8.0
-xgboost==3.2.0
-imbalanced-learn==0.14.1
 tabulate==0.10.0
+tensorflow==2.21.0
+xgboost==3.2.0

@@ -9,13 +9,20 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report, roc_auc_score, precision_score, recall_score, make_scorer
-from sklearn.model_selection import GridSearchCV, PredefinedSplit
-from data_loader import DataLoader
+from sklearn.model_selection import GridSearchCV, PredefinedSplit, RandomizedSearchCV
+from data_loader import process_dataset
+import tensorflow as tf
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import InputLayer, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.utils import plot_model
+from scikeras.wrappers import KerasClassifier
 
 
-df_x_train, df_y_train = DataLoader(data_set="a").process_dataset(undersample=True)
-df_x_test, df_y_test = DataLoader(data_set="b").process_dataset(undersample=False)
-df_x_val, df_y_val = DataLoader(data_set="c").process_dataset(undersample=False)
+df_x_train, df_y_train = process_dataset(data_set="a", undersample=True)
+df_x_test, df_y_test = process_dataset(data_set="b", undersample=False)
+df_x_val, df_y_val = process_dataset(data_set="c", undersample=False)
 
 scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(df_x_train)
@@ -25,6 +32,7 @@ y_train = df_y_train.values.ravel()
 y_test = df_y_test.values.ravel()
 y_val = df_y_val.values.ravel()
 
+# Best params found {'C': np.float64(0.1), 'max_iter': 500, 'solver': 'lbfgs'}
 def logistic_regression() -> LogisticRegression:
     """
     Trains a logistic regression model with hyperparameter tuning on validation set.
@@ -47,8 +55,9 @@ def logistic_regression() -> LogisticRegression:
         param_grid,
     )
 
-    return best_model
+    return best_model.fit(x_train_scaled, y_train)
 
+# # Best parameters found:  {'max_depth': None, 'max_features': 'sqrt', 'min_samples_leaf': 1, 'min_samples_split': 8, 'n_estimators': 100}
 def random_forest() -> RandomForestClassifier:
     """
     Trains a random forest model.
@@ -73,8 +82,77 @@ def random_forest() -> RandomForestClassifier:
         param_grid,
     )
 
-    return best_model
+    return best_model.fit(x_train_scaled, y_train)
 
+# Best params {'model__neurons': 32, 'model__l2_reg': 0.001, 'model__dropout_rate': 0.7, 'epochs': 100, 'batch_size': 32}
+def ann() -> None:
+    """
+    Trains an Artificial Neural Network (ANN) using Keras with hyperparameter tuning on validation set.
+    """
+
+    def create_model(neurons=64, dropout_rate=0.5, l2_reg=0.01):
+        model = Sequential([
+            Dense(neurons, activation='relu', input_shape=(x_train_scaled.shape[1],),
+                kernel_regularizer=l2(l2_reg)),
+            BatchNormalization(),
+            Dropout(dropout_rate),
+            Dense(1, activation='sigmoid')
+        ])
+        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        return model
+
+    clf = KerasClassifier(model=create_model, verbose=1)
+
+
+    param_dist = {
+        # Number of features, so we'll try a range of neurons around that.
+        'model__neurons': [32, 64, 128, 256],
+        # We avoid overfitting bc we prefer a higher recall. So high dropout rate will prevent this.
+        'model__dropout_rate': [0.3, 0.5, 0.7],
+        # Regularize well across patients by trying a range of L2 regularization strengths.
+        'model__l2_reg': [0.001, 0.01, 0.1],
+        # Dataset is rather small so batches should not be too high.
+        'batch_size': [16, 32, 64],
+        'epochs': [50, 100]
+    }
+
+    early_stop = EarlyStopping(patience=10, restore_best_weights=True)
+
+    x_all = np.vstack([x_train_scaled, x_val_scaled])
+    y_all = np.concatenate([df_y_train, df_y_val])
+
+    # -1 means always train,
+    # 0 means use the validation fold.
+    test_fold = np.concatenate([
+        -1 * np.ones(len(df_y_train), dtype=int),
+        np.zeros(len(df_y_val), dtype=int),
+    ])
+    split = PredefinedSplit(test_fold=test_fold)
+
+    scoring = {
+        'recall_pos': make_scorer(recall_score, pos_label=1),
+        'precision_pos': make_scorer(precision_score, pos_label=1)
+    }
+
+    random_search = RandomizedSearchCV(
+        estimator=clf,
+        param_distributions=param_dist,
+        n_iter=20,
+        cv=split,
+        scoring=scoring,
+        refit='recall_pos',
+        n_jobs=-1,
+        verbose=1
+    )
+
+    search_result = random_search.fit(
+        x_all, y_all,
+        validation_data=(x_val_scaled, y_val),
+        callbacks=[early_stop]
+    )
+
+    print("Best parameters found: ", search_result.best_params_)
+    compare_models({"ANN": search_result.best_estimator_})
 
 ### HELPERS ###
 def compare_models(models: Mapping[str, BaseEstimator]) -> None:
@@ -161,78 +239,6 @@ def compare_models(models: Mapping[str, BaseEstimator]) -> None:
             avg_table[col] = avg_table[col].map(fmt)
 
     print("Model Comparison:\n")
-    print(class_table.to_markdown(index=False))
-    print()
-    print(overall_table.to_markdown(index=False))
-    print()
-    print(avg_table.to_markdown(index=False))
-
-def _print_classification_report(model_name: str, y: np.ndarray, y_pred: np.ndarray, prob: np.ndarray) -> None:
-    """
-    Pretty prints a detailed classification report.
-
-    Arguments:
-        model_name: The name of the model being evaluated.
-        y: The true labels for the evaluation set.
-        y_pred: The predicted labels for the test set.
-        prob: The predicted probabilities for the positive class, used for ROC-AUC calculation.
-    """
-    report = classification_report(y, y_pred, output_dict=True, labels=[0, 1], target_names=["No Risk", "Risk"])
-
-    # Little format helper
-    def fmt(val):
-        return f"{val:.2f}" if isinstance(val, float) else str(int(val))
-
-    class_table = pd.DataFrame(
-        {
-            "Metric": ["Precision", "Recall", "F1-score", "Support"],
-            "No Risk": [
-                report["No Risk"]["precision"],
-                report["No Risk"]["recall"],
-                report["No Risk"]["f1-score"],
-                report["No Risk"]["support"],
-            ],
-            "Risk": [
-                report["Risk"]["precision"],
-                report["Risk"]["recall"],
-                report["Risk"]["f1-score"],
-                report["Risk"]["support"],
-            ],
-        }
-    )
-    class_table["No Risk"] = class_table["No Risk"].map(fmt)
-    class_table["Risk"] = class_table["Risk"].map(fmt)
-
-    overall_table = pd.DataFrame(
-        {
-            "Metric": ["Overall Accuracy", "ROC-AUC"],
-            "Score": [report["accuracy"], roc_auc_score(y, prob)],
-        }
-    )
-    overall_table["Score"] = overall_table["Score"].map(fmt)
-
-    avg_table = pd.DataFrame(
-        {
-            "Metric": ["Precision", "Recall", "F1-score", "Support"],
-            "Macro Avg": [
-                report["macro avg"]["precision"],
-                report["macro avg"]["recall"],
-                report["macro avg"]["f1-score"],
-                report["macro avg"]["support"],
-            ],
-            "Weighted Avg": [
-                report["weighted avg"]["precision"],
-                report["weighted avg"]["recall"],
-                report["weighted avg"]["f1-score"],
-                report["weighted avg"]["support"],
-            ],
-        }
-    )
-    avg_table["Macro Avg"] = avg_table["Macro Avg"].map(fmt)
-    avg_table["Weighted Avg"] = avg_table["Weighted Avg"].map(fmt)
-
-
-    print(f"Metrics for {model_name}:\n")
     print(class_table.to_markdown(index=False))
     print()
     print(overall_table.to_markdown(index=False))

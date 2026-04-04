@@ -14,12 +14,10 @@ try:
     from .data_loader import process_dataset
 except ImportError:
     from data_loader import process_dataset
-import tensorflow as tf
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import InputLayer, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras import Input, Sequential
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.utils import plot_model
 from scikeras.wrappers import KerasClassifier
 
 
@@ -92,8 +90,8 @@ def ann() -> None:
 
     def create_model(neurons=64, dropout_rate=0.5, l2_reg=0.01):
         model = Sequential([
-            Dense(neurons, activation='relu', input_shape=(x_train_scaled.shape[1],),
-                kernel_regularizer=l2(l2_reg)),
+            Input(shape=(x_train_scaled.shape[1],)),
+            Dense(neurons, activation='relu', kernel_regularizer=l2(l2_reg)),
             BatchNormalization(),
             Dropout(dropout_rate),
             Dense(1, activation='sigmoid')
@@ -101,7 +99,7 @@ def ann() -> None:
         model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         return model
 
-    clf = KerasClassifier(model=create_model, verbose=1)
+    clf = KerasClassifier(model=create_model, verbose=0)
 
 
     param_dist = {

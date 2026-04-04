@@ -250,11 +250,13 @@ def change_optional_field(
 
 def done_intake(required_answers: dict[str, str], optional_answers: dict[str, str]) -> str:
     """
-    Return final processing message when required data is complete.
+    For debugging, print captured input in bottom of screen.
     """
-    if not required_complete(required_answers):
-        missing = ", ".join(missing_required_names(required_answers))
-        return f"Cannot process yet. Missing required fields: {missing}."
+    # if not required_complete(required_answers):
+    #     missing = ", ".join(missing_required_names(required_answers))
+    #     return f"Cannot process yet. Missing required fields: {missing}."
 
-    summary = all_summary(required_answers, optional_answers)
-    return f"{PROCESSING_REPLY}\n\nCaptured inputs:\n{summary}"
+    # summary = all_summary(required_answers, optional_answers)
+    # return f"{PROCESSING_REPLY}\n\nCaptured inputs:\n{summary}"
+
+    return ""

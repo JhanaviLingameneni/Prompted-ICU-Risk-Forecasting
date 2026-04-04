@@ -49,8 +49,8 @@ def section_summary(specs: Sequence[FieldSpec], answers: Mapping[str, str]) -> s
     """
     lines = []
     for field in specs:
-        lines.append(f"- {field['name']}: {answers.get(field['name'], 'missing')}")
-    return "\n".join(lines)
+        lines.append(f"<li><b>{field['name']}:</b> {answers.get(field['name'], 'missing')}</li>")
+    return f"<ul>{''.join(lines)}</ul>"
 
 
 def all_summary(required_answers: Mapping[str, str], optional_answers: Mapping[str, str]) -> str:

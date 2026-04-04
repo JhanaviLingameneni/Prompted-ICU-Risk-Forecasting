@@ -30,13 +30,14 @@ def _build_default_model_row() -> dict[str, float]:
         feature_base = field.get("feature_base")
         if feature_base is not None:
             for suffix in AGGREGATE_SUFFIXES:
-                row[f"{feature_base}_{suffix}"] = median
+                # For single readings, STD should be 0.
+                row[f"{feature_base}_{suffix}"] = 0.0 if suffix == "std" else median
 
     return row
 
 
 DEFAULT_MODEL_ROW = _build_default_model_row()
-MODEL_FEATURE_COLUMNS: list[str] = sorted(DEFAULT_MODEL_ROW.keys())
+MODEL_FEATURE_COLUMNS = sorted(DEFAULT_MODEL_ROW.keys())
 
 
 def _to_float(value: str | float | int | None) -> float | None:
@@ -71,7 +72,7 @@ def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
     """
     row = dict(DEFAULT_MODEL_ROW)
 
-    # Apply direct biometrics/categorical fields from FIELD_SPECS metadata.
+    # Apply direct values
     for field in FIELD_SPECS:
         field_name = field["name"]
         direct_column = field.get("direct_column")
@@ -108,7 +109,7 @@ def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
                             row[onehot_col] = 1.0
                             break
 
-    # Apply aggregate feature columns from FIELD_SPECS metadata.
+    # Apply aggregate feature columns
     for field in FIELD_SPECS:
         field_name = field["name"]
         feature_base = field.get("feature_base")
@@ -122,6 +123,6 @@ def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
         for suffix in AGGREGATE_SUFFIXES:
             column = f"{feature_base}_{suffix}"
             if column in row:
-                row[column] = vital_value
+                row[column] = 0.0 if suffix == "std" else vital_value
 
     return pd.DataFrame([row], columns=MODEL_FEATURE_COLUMNS)

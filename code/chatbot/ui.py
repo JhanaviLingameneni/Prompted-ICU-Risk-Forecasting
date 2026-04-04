@@ -2,6 +2,7 @@
 UI-specific helpers that build Gradio update payloads.
 """
 
+from html import escape
 from typing import Any, Mapping
 
 import gradio as gr
@@ -16,6 +17,40 @@ from chatbot.core import (
     required_complete,
     section_summary,
 )
+
+
+def required_progress_html(required_answers: Mapping[str, str], status: str) -> str:
+    """Render required completion as a native HTML progress bar."""
+    return progress_html(
+        completed=len(required_answers),
+        total=len(REQUIRED_SPECS),
+        status=status,
+        completion_label="required fields completed",
+    )
+
+
+def optional_progress_html(optional_answers: Mapping[str, str], status: str) -> str:
+    """Render optional completion as a native HTML progress bar."""
+    return progress_html(
+        completed=len(optional_answers),
+        total=len(OPTIONAL_SPECS),
+        status=status,
+        completion_label="optional fields processed",
+    )
+
+
+def progress_html(completed: int, total: int, status: str, completion_label: str) -> str:
+    """Build a shared HTML progress widget used by intake sections."""
+    completed = min(completed, total)
+    percent = 0 if total == 0 else round((completed / total) * 100)
+
+    return (
+        f"<div style='display:flex; flex-direction:column; gap:0.4rem;'>"
+        f"<progress value='{completed}' max='{total}' style='width:100%; height:20px;'></progress>"
+        f"<div><strong>{completed}/{total}</strong> {escape(completion_label)} ({percent}%).</div>"
+        f"<div>{escape(status)}</div>"
+        f"</div>"
+    )
 
 
 def input_updates_for_field(field: FieldSpec | None) -> tuple[Any, Any, Any]:
@@ -50,7 +85,7 @@ def required_ui(required_answers: Mapping[str, str], required_index: int, status
 
     return (
         field_header(REQUIRED_SPECS, required_index),
-        status,
+        required_progress_html(required_answers, status),
         section_summary(REQUIRED_SPECS, required_answers),
         text_update,
         number_update,
@@ -69,7 +104,7 @@ def optional_ui(
     if not required_complete(required_answers):
         return (
             "Complete all required fields first.",
-            status,
+            optional_progress_html(optional_answers, status),
             section_summary(OPTIONAL_SPECS, optional_answers),
             gr.update(visible=False, choices=[], value=None, label="Choose optional field"),
             gr.update(visible=False, value="", label="Text Input"),
@@ -95,7 +130,7 @@ def optional_ui(
 
     return (
         header,
-        status,
+        optional_progress_html(optional_answers, status),
         section_summary(OPTIONAL_SPECS, optional_answers),
         selector_update,
         text_update,

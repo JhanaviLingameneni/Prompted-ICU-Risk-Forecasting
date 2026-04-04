@@ -113,7 +113,7 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
 
     # One-hot encode ICUType
     icu_dummies = pd.get_dummies(df_all[["RecordID", "ICUType"]], columns=["ICUType"], dummy_na=True)
-    icu_dummies = icu_dummies.drop_duplicates(subset="RecordID").set_index("RecordID")
+    icu_dummies = icu_dummies.drop_duplicates(subset="RecordID").set_index("RecordID").as_type(float)
     df_features = df_features.join(icu_dummies)
 
     # Add the biometrics, unaggregated.

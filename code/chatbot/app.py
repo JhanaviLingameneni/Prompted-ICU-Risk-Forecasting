@@ -57,8 +57,8 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
             # Draw the required fields tab
             with gr.Tab("Required Fields", id=REQUIRED_TAB_ID):
                 req_field_md = gr.Markdown()
-                req_status_box = gr.Textbox(label="Required Status", lines=5, interactive=False)
-                req_summary_box = gr.Textbox(label="Required Captured Inputs", lines=10, interactive=False)
+                req_status_box = gr.HTML(label="Required Progress")
+                req_summary_box = gr.HTML(label="Required Captured Inputs")
 
                 # Draw the three types of inputs, displayed one at a time based on field type
                 with gr.Row():
@@ -74,8 +74,8 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
             # Draw the optional fields tab
             with gr.Tab("Optional Fields", id=OPTIONAL_TAB_ID):
                 opt_field_md = gr.Markdown()
-                opt_status_box = gr.Textbox(label="Optional Status", lines=5, interactive=False)
-                opt_summary_box = gr.Textbox(label="Optional Captured Inputs", lines=10, interactive=False)
+                opt_status_box = gr.HTML(label="Optional Progress")
+                opt_summary_box = gr.HTML(label="Optional Captured Inputs",)
                 opt_field_selector = gr.Dropdown(
                     label="Choose optional field",
                     choices=[],
@@ -94,7 +94,7 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
                     opt_restart_btn = gr.Button("Restart Optional")
                     done_btn = gr.Button("Done", variant="secondary")
 
-        final_status_box = gr.Textbox(label="Final Processing Output", lines=16, interactive=False)
+        final_status_box = gr.HTML(label="Final Processing Output")
 
         full_outputs = [
             required_answers_state,

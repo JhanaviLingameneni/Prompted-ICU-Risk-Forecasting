@@ -10,7 +10,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report, roc_auc_score, precision_score, recall_score, make_scorer
 from sklearn.model_selection import GridSearchCV, PredefinedSplit, RandomizedSearchCV
-from data_loader import process_dataset
+try:
+    from .data_loader import process_dataset
+except ImportError:
+    from data_loader import process_dataset
 import tensorflow as tf
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import InputLayer, Flatten, Dense, Dropout, BatchNormalization
@@ -46,7 +49,7 @@ def logistic_regression() -> LogisticRegression:
         "max_iter": [500, 1000, 2000, 3000, 4000],
     }
 
-    best_model = hyperparameter_tuning(
+    return hyperparameter_tuning(
         model,
         x_train_scaled,
         y_train,
@@ -55,9 +58,7 @@ def logistic_regression() -> LogisticRegression:
         param_grid,
     )
 
-    return best_model.fit(x_train_scaled, y_train)
-
-# # Best parameters found:  {'max_depth': None, 'max_features': 'sqrt', 'min_samples_leaf': 1, 'min_samples_split': 8, 'n_estimators': 100}
+# Best parameters found:  {'max_depth': None, 'max_features': 'sqrt', 'min_samples_leaf': 1, 'min_samples_split': 8, 'n_estimators': 100}
 def random_forest() -> RandomForestClassifier:
     """
     Trains a random forest model.
@@ -73,7 +74,7 @@ def random_forest() -> RandomForestClassifier:
     }
 
     # Use validation set to tune hyperparamters
-    best_model = hyperparameter_tuning(
+    return hyperparameter_tuning(
         model,
         x_train_scaled,
         y_train,
@@ -82,7 +83,6 @@ def random_forest() -> RandomForestClassifier:
         param_grid,
     )
 
-    return best_model.fit(x_train_scaled, y_train)
 
 # Best params {'model__neurons': 32, 'model__l2_reg': 0.001, 'model__dropout_rate': 0.7, 'epochs': 100, 'batch_size': 32}
 def ann() -> None:
@@ -142,7 +142,7 @@ def ann() -> None:
         scoring=scoring,
         refit='recall_pos',
         n_jobs=-1,
-        verbose=1
+        verbose=0
     )
 
     search_result = random_search.fit(
@@ -152,7 +152,8 @@ def ann() -> None:
     )
 
     print("Best parameters found: ", search_result.best_params_)
-    compare_models({"ANN": search_result.best_estimator_})
+    # compare_models({"ANN": search_result.best_estimator_})
+    return search_result.best_estimator_
 
 ### HELPERS ###
 def compare_models(models: Mapping[str, BaseEstimator]) -> None:

@@ -22,6 +22,11 @@ def _build_default_model_row() -> dict[str, float]:
         if direct_column is not None:
             row[direct_column] = median
 
+        onehot_defaults = field.get("onehot_defaults")
+        if onehot_defaults is not None:
+            for column_name, default_value in onehot_defaults.items():
+                row[str(column_name)] = float(default_value)
+
         feature_base = field.get("feature_base")
         if feature_base is not None:
             for suffix in AGGREGATE_SUFFIXES:
@@ -86,6 +91,22 @@ def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
 
         if parsed_value is not None:
             row[direct_column] = parsed_value
+
+            if field_name == "icu_type":
+                onehot_defaults = field.get("onehot_defaults")
+                if onehot_defaults is not None:
+                    for onehot_col in onehot_defaults:
+                        if onehot_col in row:
+                            row[onehot_col] = 0.0
+
+                    possible_cols = [
+                        f"ICUType_{int(parsed_value)}.0",
+                        f"ICUType_{int(parsed_value)}",
+                    ]
+                    for onehot_col in possible_cols:
+                        if onehot_col in row:
+                            row[onehot_col] = 1.0
+                            break
 
     # Apply aggregate feature columns from FIELD_SPECS metadata.
     for field in FIELD_SPECS:

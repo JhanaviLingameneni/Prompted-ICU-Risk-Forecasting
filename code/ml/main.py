@@ -1,13 +1,22 @@
 """
 Entrypoint
 """
-
+from pathlib import Path
 
 
 if __name__ == "__main__":
     from joblib import dump
-    from train import ann, scaler
+    from train import ann, scaler, df_x_train
+
+    MODELS_DIR = Path(__file__).resolve().parents[1] / "models"
+
+    with (MODELS_DIR / "columns_spec.txt").open("w", encoding="utf-8") as f:
+        f.write("Model input columns:\n")
+        f.write("\n".join(df_x_train.columns))
+        f.write("\n First 5 columns:\n")
+        f.write(df_x_train.head().to_string())
+
     # ANN is a Keras model, so we save it in a Keras-compatible format.
-    ann().model.save("../models/ann_model.keras")
+    ann().model_.save(MODELS_DIR / "ann_model.keras")
     # Save the scaler using joblib
-    dump(scaler, "../models/ann_scaler.bin")
+    dump(scaler, MODELS_DIR / "ann_scaler.bin")

@@ -90,7 +90,7 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
                 with gr.Row():
                     opt_submit_btn = gr.Button("Add Vital", variant="primary")
                     opt_restart_btn = gr.Button("Restart")
-                    done_btn = gr.Button("Done", variant="secondary")
+                    done_btn = gr.Button("Done", variant="huggingface")
 
         final_status_box = gr.HTML(label="Final Processing Output")
 

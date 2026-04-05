@@ -10,7 +10,7 @@ AGGREGATE_SUFFIXES: tuple[str, ...] = ("mean", "median", "min", "max", "std")
 PROCESSING_REPLY: Final[str] = "Captured processing signal. Assessing risk of acute adverse event based on provided information..."
 FIELD_SPECS: list[FieldSpec] = [
     {"name": "age", "question": "Age (years)", "required": True, "type": "int", "min": 0, "max": 120, "direct_column": "Age", "median": 68.0},
-    {"name": "gender", "question": "Gender", "required": True, "type": "choice", "choices": ["male", "female", "other"], "direct_column": "Gender", "median": 1.0},
+    {"name": "gender", "question": "Gender", "required": False, "type": "choice", "choices": ["male", "female", "other"], "direct_column": "Gender", "median": 1.0},
     {"name": "bun", "question": "BUN (mg/dL)", "required": True, "type": "float", "min": 0, "feature_base": "BUN", "median": 19.75},
     {"name": "weight", "question": "Weight (kg)", "required": True, "type": "float", "min": 0, "direct_column": "Weight", "median": 80.0},
     {"name": "creatinine", "question": "Creatinine (mg/dL)", "required": True, "type": "float", "min": 0, "feature_base": "Creatinine", "median": 0.95},
@@ -26,7 +26,7 @@ FIELD_SPECS: list[FieldSpec] = [
     {"name": "diasabp", "question": "DiasABP (mmHg)", "required": False, "type": "float", "feature_base": "DiasABP", "median": 58.0},
     {"name": "fio2", "question": "FiO2", "required": False, "type": "float", "min": 0, "max": 1, "feature_base": "FiO2", "median": 0.525},
     {"name": "glucose", "question": "Glucose (mg/dL)", "required": False, "type": "float", "feature_base": "Glucose", "median": 130.0},
-    {"name": "hco3", "question": "HCO3 (mmol/L)", "required": False, "type": "float", "feature_base": "HCO3", "median": 23.5},
+    {"name": "hco3", "question": "HCO3 (mmol/L)", "required": True, "type": "float", "feature_base": "HCO3", "median": 23.5},
     {"name": "hct", "question": "HCT (%)", "required": False, "type": "float", "feature_base": "HCT", "median": 30.55},
     {"name": "hr", "question": "HR (bpm)", "required": False, "type": "float", "feature_base": "HR", "median": 86.127441244621},
     {"name": "k", "question": "Potassium K (mEq/L)", "required": False, "type": "float", "feature_base": "K", "median": 4.1},
@@ -35,7 +35,7 @@ FIELD_SPECS: list[FieldSpec] = [
     {"name": "map", "question": "MAP (mmHg)", "required": False, "type": "float", "feature_base": "MAP", "median": 78.0},
     {"name": "mechvent", "question": "MechVent", "required": False, "type": "choice", "choices": ["0", "1"], "feature_base": "MechVent", "median": 1.0},
     {"name": "na", "question": "Sodium Na (mEq/L)", "required": False, "type": "float", "feature_base": "Na", "median": 139.0},
-    {"name": "nidiasabp", "question": "NIDiasABP (mmHg)", "required": False, "type": "float", "feature_base": "NIDiasABP", "median": 55.2962962962963},
+    {"name": "nidiasabp", "question": "NIDiasABP (mmHg)", "required": True, "type": "float", "feature_base": "NIDiasABP", "median": 55.2962962962963},
     {"name": "nimap", "question": "NIMAP (mmHg)", "required": False, "type": "float", "feature_base": "NIMAP", "median": 73.85},
     {"name": "nisysabp", "question": "NISysABP (mmHg)", "required": False, "type": "float", "feature_base": "NISysABP", "median": 114.0},
     {"name": "paco2", "question": "PaCO2 (mmHg)", "required": False, "type": "float", "feature_base": "PaCO2", "median": 39.666666666666664},
@@ -45,10 +45,10 @@ FIELD_SPECS: list[FieldSpec] = [
     {"name": "resprate", "question": "RespRate (bpm)", "required": False, "type": "float", "feature_base": "RespRate", "median": 19.0},
     {"name": "sao2", "question": "SaO2 (%)", "required": False, "type": "float", "feature_base": "SaO2", "median": 97.2},
     {"name": "sysabp", "question": "SysABP (mmHg)", "required": False, "type": "float", "feature_base": "SysABP", "median": 116.0},
-    {"name": "temp", "question": "Temp (C)", "required": False, "type": "float", "feature_base": "Temp", "median": 36.95555555555555},
+    {"name": "temp", "question": "Temp (C)", "required": True, "type": "float", "feature_base": "Temp", "median": 36.95555555555555},
     {"name": "tropi", "question": "TropI (ug/L)", "required": False, "type": "float", "feature_base": "TroponinI", "median": 2.225},
     {"name": "tropt", "question": "TropT (ug/L)", "required": False, "type": "float", "feature_base": "TroponinT", "median": 0.13333333333333333},
-    {"name": "urine", "question": "Urine output (mL)", "required": False, "type": "float", "feature_base": "Urine", "median": 103.33806818181819},
+    {"name": "urine", "question": "Urine output (mL)", "required": True, "type": "float", "feature_base": "Urine", "median": 103.33806818181819},
     {"name": "wbc", "question": "WBC (cells/nL)", "required": False, "type": "float", "feature_base": "WBC", "median": 11.558333333333334},
 ]
 

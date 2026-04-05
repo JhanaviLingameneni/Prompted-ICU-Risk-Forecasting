@@ -1,10 +1,10 @@
 """
-Pure business logic helpers for deterministic intake flow.
+Core UI logic.
 """
 
 from typing import Mapping, Sequence
 
-from chatbot.config import FIELD_SPECS, OPTIONAL_SPECS, REQUIRED_SPECS, FieldSpec
+from ui.config import FIELD_SPECS, OPTIONAL_SPECS, REQUIRED_SPECS, FieldSpec
 
 
 def current_field(specs: Sequence[FieldSpec], index: int) -> FieldSpec | None:
@@ -43,19 +43,19 @@ def missing_required_names(answers: Mapping[str, str]) -> list[str]:
     return [field["name"] for field in REQUIRED_SPECS if field["name"] not in answers]
 
 
-def section_summary(specs: Sequence[FieldSpec], answers: Mapping[str, str]) -> str:
+def section_summary(specs: Sequence[FieldSpec], answers: Mapping[str, str], missing_text: str) -> str:
     """
-    Build a printable section summary for UI display.
+    Build a summary of inputs.
     """
     lines = []
     for field in specs:
-        lines.append(f"<li><b>{field['name']}:</b> {answers.get(field['name'], 'missing')}</li>")
+        lines.append(f"<li><b>{field['name']}:</b> {answers.get(field['name'], missing_text)}</li>")
     return f"<ul>{''.join(lines)}</ul>"
 
 
 def all_summary(required_answers: Mapping[str, str], optional_answers: Mapping[str, str]) -> str:
     """
-    Build a printable summary for all known fields.
+    Used for debugging. Build a summar of all inputs.
     """
     merged = dict(required_answers)
     merged.update(optional_answers)

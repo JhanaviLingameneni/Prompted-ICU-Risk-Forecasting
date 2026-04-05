@@ -6,14 +6,13 @@ from collections.abc import Callable
 
 import gradio as gr
 
-from chatbot.config import OPTIONAL_TAB_ID, REQUIRED_TAB_ID
-from chatbot.handlers import (
+from ui.config import OPTIONAL_TAB_ID, REQUIRED_TAB_ID
+from ui.handlers import (
     change_optional_field,
     done_intake,
     initialize,
     restart_optional,
     restart_required,
-    skip_optional,
     submit_optional,
     submit_required,
 )
@@ -41,15 +40,15 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
         processed = done_output_callback(base_output, required_answers, optional_answers)
         return base_output if processed is None else processed
 
+    # This is the building of the UI.
     with gr.Blocks(title="ICU Intake Form") as demo:
-        gr.Markdown("## ICU Intake Form")
-        gr.Markdown("Two-stage deterministic intake: complete required fields first, then optional fields.")
+        gr.Markdown("## ICU Intake Form") # Heading
 
-        required_answers_state = gr.State({})
-        required_index_state = gr.State(0)
-        optional_answers_state = gr.State({})
-        optional_index_state = gr.State(0)
-        optional_selected_state = gr.State(None)
+        required_answers_state = gr.State({}) # Dict of required field names
+        required_index_state = gr.State(0) # Index of current required field for progress bar
+        optional_answers_state = gr.State({}) # Dict of optional field names
+        optional_index_state = gr.State(0) # Index of current optional field for progress bar
+        optional_selected_state = gr.State(None) # Currently selected optional field for display
 
         # Draw the two tabs
         with gr.Tabs(selected=REQUIRED_TAB_ID) as stage_tabs:
@@ -68,8 +67,8 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
 
                 # Draw the required tab buttons
                 with gr.Row():
-                    req_submit_btn = gr.Button("Submit Required", variant="primary")
-                    req_restart_btn = gr.Button("Restart Required")
+                    req_submit_btn = gr.Button("Add Vital", variant="primary")
+                    req_restart_btn = gr.Button("Restart")
 
             # Draw the optional fields tab
             with gr.Tab("Optional Fields", id=OPTIONAL_TAB_ID):
@@ -89,9 +88,8 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
                     opt_choice_input = gr.Dropdown(label="Choice Input", choices=[], visible=False)
 
                 with gr.Row():
-                    opt_submit_btn = gr.Button("Submit Optional", variant="primary")
-                    opt_skip_btn = gr.Button("Skip Optional")
-                    opt_restart_btn = gr.Button("Restart Optional")
+                    opt_submit_btn = gr.Button("Add Vital", variant="primary")
+                    opt_restart_btn = gr.Button("Restart")
                     done_btn = gr.Button("Done", variant="secondary")
 
         final_status_box = gr.HTML(label="Final Processing Output")
@@ -117,7 +115,7 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
             opt_number_input,
             opt_choice_input,
             opt_submit_btn,
-            opt_skip_btn,
+            opt_restart_btn,
             done_btn,
             stage_tabs,
             final_status_box,
@@ -260,12 +258,6 @@ def build_app(done_output_callback: DoneOutputCallback | None = None) -> gr.Bloc
                 opt_number_input,
                 opt_choice_input,
             ],
-            outputs=full_outputs,
-        )
-
-        opt_skip_btn.click(
-            skip_optional,
-            inputs=[required_answers_state, required_index_state, optional_answers_state, optional_index_state, optional_selected_state],
             outputs=full_outputs,
         )
 

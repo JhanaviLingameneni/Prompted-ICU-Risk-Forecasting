@@ -6,14 +6,14 @@ from typing import Any
 
 import gradio as gr
 
-from chatbot.config import (
+from ui.config import (
     OPTIONAL_SPECS,
     OPTIONAL_TAB_ID,
     PROCESSING_REPLY,
     REQUIRED_SPECS,
     REQUIRED_TAB_ID,
 )
-from chatbot.core import (
+from ui.core import (
     all_summary,
     current_field,
     field_by_name,
@@ -22,7 +22,7 @@ from chatbot.core import (
     required_complete,
     validate_input,
 )
-from chatbot.ui import optional_ui, required_ui, tab_update
+from ui.ui import optional_ui, required_ui, tab_update
 
 def initialize():
     """
@@ -77,7 +77,7 @@ def submit_required(
     if not ok:
         req = required_ui(required_answers, required_index, f"Invalid input for {field['name']}. {error}")
         next_optional_selected = normalize_optional_selection(optional_answers, optional_selected_name)
-        opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Optional fields unlock after required completion.")
+        opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Optional fields are available for completion after all required fields are captured.")
         done_update = gr.update(interactive=required_complete(required_answers))
         return required_answers, required_index, optional_answers, optional_index, next_optional_selected, *req, *opt, done_update, tab_update(REQUIRED_TAB_ID), ""
 
@@ -86,7 +86,7 @@ def submit_required(
     next_required_index = required_index + 1
 
     req = required_ui(updated_required, next_required_index, f"Captured {field['name']}.")
-    opt_status = "Optional section unlocked." if required_complete(updated_required) else "Optional fields unlock after required completion."
+    opt_status = "Please fill optional fields." if required_complete(updated_required) else "Optional fields are available for completion after all required fields are captured."
     next_optional_selected = normalize_optional_selection(optional_answers, optional_selected_name)
     opt = optional_ui(updated_required, optional_answers, next_optional_selected, opt_status)
     done_update = gr.update(interactive=required_complete(updated_required))
@@ -112,14 +112,14 @@ def restart_required(
     optional_selected_name: str | None,
 ) -> tuple[Any, ...]:
     """
-    Reset required section while keeping optional state unchanged.
+    Reset required.
     """
     required_answers = {}
     required_index = 0
 
     req = required_ui(required_answers, required_index, "Required section restarted.")
     next_optional_selected = normalize_optional_selection(optional_answers, optional_selected_name)
-    opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Optional fields unlock after required completion.")
+    opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Optional fields are available for completion after all required fields are captured.")
 
     return (
         required_answers,
@@ -151,7 +151,7 @@ def submit_optional(
     if not required_complete(required_answers):
         req = required_ui(required_answers, required_index, "Complete required fields first.")
         next_optional_selected = normalize_optional_selection(optional_answers, optional_selected_name)
-        opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Optional section is locked until required fields are complete.")
+        opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Please complete required section before submitting optional fields.")
         return required_answers, required_index, optional_answers, optional_index, next_optional_selected, *req, *opt, gr.update(interactive=False), tab_update(REQUIRED_TAB_ID), ""
 
     selected_name = normalize_optional_selection(optional_answers, optional_selected_name)
@@ -179,44 +179,9 @@ def submit_optional(
     return required_answers, required_index, updated_optional, next_optional_index, next_optional_selected, *req, *opt, gr.update(interactive=True), tab_update(OPTIONAL_TAB_ID), ""
 
 
-def skip_optional(
-    required_answers: dict[str, str],
-    required_index: int,
-    optional_answers: dict[str, str],
-    optional_index: int,
-    optional_selected_name: str | None,
-) -> tuple[Any, ...]:
-    """
-    Mark the selected optional field as skipped and refresh outputs.
-    """
-    if not required_complete(required_answers):
-        req = required_ui(required_answers, required_index, "Complete required fields first.")
-        next_optional_selected = normalize_optional_selection(optional_answers, optional_selected_name)
-        opt = optional_ui(required_answers, optional_answers, next_optional_selected, "Optional section is locked until required fields are complete.")
-        return required_answers, required_index, optional_answers, optional_index, next_optional_selected, *req, *opt, gr.update(interactive=False), tab_update(REQUIRED_TAB_ID), ""
-
-    selected_name = normalize_optional_selection(optional_answers, optional_selected_name)
-    field = field_by_name(OPTIONAL_SPECS, selected_name)
-    if field is None:
-        req = required_ui(required_answers, required_index, "Required section complete.")
-        opt = optional_ui(required_answers, optional_answers, selected_name, "All optional fields already processed.")
-        return required_answers, required_index, optional_answers, optional_index, selected_name, *req, *opt, gr.update(interactive=True), tab_update(OPTIONAL_TAB_ID), ""
-
-    updated_optional = dict(optional_answers)
-    updated_optional[field["name"]] = "skipped"
-    next_optional_index = len(updated_optional)
-    next_optional_selected = normalize_optional_selection(updated_optional, selected_name)
-
-    req = required_ui(required_answers, required_index, "Required section complete.")
-    done_msg = "All optional fields processed." if next_optional_selected is None else f"Skipped {field['name']}."
-    opt = optional_ui(required_answers, updated_optional, next_optional_selected, done_msg)
-
-    return required_answers, required_index, updated_optional, next_optional_index, next_optional_selected, *req, *opt, gr.update(interactive=True), tab_update(OPTIONAL_TAB_ID), ""
-
-
 def restart_optional(required_answers: dict[str, str], required_index: int) -> tuple[Any, ...]:
     """
-    Clear optional section and rebuild UI while preserving required answers.
+    Reset optional.
     """
     optional_answers = {}
     optional_index = 0

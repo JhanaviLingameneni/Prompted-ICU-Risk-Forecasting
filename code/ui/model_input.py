@@ -1,17 +1,23 @@
-"""Model input row construction from chatbot answers."""
+"""
+Model input row construction from UI answers.
+"""
 
 from __future__ import annotations
 
 import pandas as pd
 
-from chatbot.config import AGGREGATE_SUFFIXES, FIELD_SPECS
+from ui.config import AGGREGATE_SUFFIXES, FIELD_SPECS
 
 
 APP_STATE: dict[str, pd.DataFrame | None] = {"latest_model_input_df": None}
 
 
 def _build_default_model_row() -> dict[str, float]:
-    row: dict[str, float] = {}
+    """
+    We are filling missing values with median values from the training set.
+    Median values are hard-codeded into the FIELD_SPEC config.
+    """
+    row = {}
     for field in FIELD_SPECS:
         median_raw = field.get("median")
         median = float(median_raw) if median_raw is not None else None
@@ -35,36 +41,8 @@ def _build_default_model_row() -> dict[str, float]:
 
     return row
 
-
 DEFAULT_MODEL_ROW = _build_default_model_row()
 MODEL_FEATURE_COLUMNS = sorted(DEFAULT_MODEL_ROW.keys())
-
-
-def _to_float(value: str | float | int | None) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    text = str(value).strip()
-    if text == "" or text.lower() == "skipped":
-        return None
-    try:
-        return float(text)
-    except ValueError:
-        return None
-
-
-def _gender_to_numeric(value: str | None) -> int | None:
-    if value is None:
-        return None
-    normalized = value.strip().lower()
-    if normalized == "male":
-        return 1
-    if normalized == "female":
-        return 0
-    numeric = _to_float(value)
-    return int(numeric) if numeric is not None else None
-
 
 def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
     """
@@ -126,3 +104,24 @@ def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
                 row[column] = 0.0 if suffix == "std" else vital_value
 
     return pd.DataFrame([row], columns=MODEL_FEATURE_COLUMNS)
+
+
+def _to_float(value: str | float | int | None) -> float | None:
+    if value is None or isinstance(value, str): # Any string should be considered None
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def _gender_to_numeric(value: str | None) -> int | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized == "male":
+        return 1
+    if normalized == "female":
+        return 0
+    numeric = _to_float(value)
+    return int(numeric) if numeric is not None else None

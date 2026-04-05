@@ -13,7 +13,7 @@ In here you will find the following project structure:
 ```bash
 ├── code                     # This contains all source code.
 │   ├── ui                   # This contains source code for Graphical User Interface used for Demo of ML Model.
-│   ├── main.py              # This contains the entry point to launch the ChatBot.
+│   ├── main.py              # This contains the entry point to launch the UI demo.
 │   ├── ml                   # This contains source code used to train models.
 │   │   ├── evaluation.ipynb # This is a Jupyer notebook containing our evaluation of the distinct models we trained.
 │   └── models               # This contains the models themselves as well as scaler objects for loading.

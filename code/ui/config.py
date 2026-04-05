@@ -7,10 +7,7 @@ from typing import Any, Final
 
 FieldSpec = dict[str, Any]
 AGGREGATE_SUFFIXES: tuple[str, ...] = ("mean", "median", "min", "max", "std")
-
-
 PROCESSING_REPLY: Final[str] = "Captured processing signal. Assessing risk of acute adverse event based on provided information..."
-
 FIELD_SPECS: list[FieldSpec] = [
     {"name": "age", "question": "Age (years)", "required": True, "type": "int", "min": 0, "max": 120, "direct_column": "Age", "median": 68.0},
     {"name": "gender", "question": "Gender", "required": True, "type": "choice", "choices": ["male", "female", "other"], "direct_column": "Gender", "median": 1.0},

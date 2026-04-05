@@ -1,10 +1,15 @@
 """
 Main entry point for the application.
-Used for demoing the Risk Assessment Chatbot.
+Used for demoing the Risk Assessment model.
 """
-from chatbot.app import build_app
-from chatbot.config import FIELD_SPECS, REQUIRED_SPECS
-from chatbot.model_input import APP_STATE, build_model_input_df
+
+"""
+high_risk = {"age": "80", "gender": "male", "bun": "60", "weight": "55", "creatinine": "3.5", "gcs": "5"}
+low_risk  = {"age": "35", "gender": "female", "bun": "12", "weight": "70", "creatinine": "0.7", "gcs": "15"}
+"""
+from ui.app import build_app
+from ui.config import FIELD_SPECS, REQUIRED_SPECS
+from ui.model_input import APP_STATE, build_model_input_df
 from joblib import load as load_scaler
 from pathlib import Path
 from tensorflow.keras.models import load_model
@@ -45,7 +50,7 @@ def _done_output_callback(final_text: str, required_answers: dict[str, str], opt
     prediction = model.predict(x, verbose=0)
     risk_score = float(prediction.ravel()[0])
 
-    if risk_score > 0.3:  # Threshold low. Prefer false positives over false negatives.
+    if risk_score > 0.4:  # Threshold low. Prefer false positives over false negatives.
         return (
             "<div style='text-align:center; margin-top: 12px;'>"
             "<div style='font-size: 64px; font-weight: 900; color: #d60000; letter-spacing: 2px;'>RISK</div>"

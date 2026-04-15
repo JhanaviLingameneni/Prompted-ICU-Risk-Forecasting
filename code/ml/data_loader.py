@@ -39,17 +39,20 @@ def clean_patient_data(patient_file: str) -> pd.DataFrame:
     df = df[df["Parameter"] != "RecordID"]
 
     # Pivot the data to have parameters as columns and timestamps as rows
-    df = df.pivot_table(index="Time", columns="Parameter", values="Value", aggfunc='mean')
+    df = df.pivot_table(index="Time", columns="Parameter",
+                        values="Value")
+
+    # Sort by time for aggregation later.
+    df.sort_index(inplace=True)
 
     # Per dataset description. -1 means it is missing value
     df = df.mask(df == -1)
-    patient_means = df.mean(axis=0, skipna=True)
-    df = df.fillna(patient_means)
 
     # Flatten to a tidy table for concatenation across all patients.
     df = df.reset_index()
     df["RecordID"] = int(recordid)
     return df
+
 
 def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
     """
@@ -66,7 +69,7 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
         patient data and the corresponding outcomes.
         The shape of features is (record_id, vitals..., aggregated_vitals..., survival),
         where each time-varying vital is expanded into four features:
-        *_mean, *_median, *_min, and *_max.
+        *_mean, *_median, *_min, *_max, and *_std.
         Corresponding outcomes is a DataFrame indexed by RecordID containing Survival.
             -1 indicates patient survived.
     """
@@ -89,10 +92,6 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
     # Grab biometric columns, these should not be aggregated
     biometric_columns = [c for c in df_all.columns if c in BIOMETRICS]
 
-    # Fill any remaining missing values using global medians for each vital.
-    global_medians = df_all[vital_columns].median()
-    df_all[vital_columns] = df_all[vital_columns].fillna(global_medians)
-
     # Aggregate each vital over time into one row per patient.
     grouped = df_all.groupby("RecordID")[vital_columns]
     df_mean = grouped.mean().add_suffix("_mean")
@@ -100,24 +99,52 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
     df_min = grouped.min().add_suffix("_min")
     df_max = grouped.max().add_suffix("_max")
     df_std = grouped.std(ddof=0).add_suffix("_std")
+    df_first = grouped.first().add_suffix("_first")
+    df_last = grouped.last().add_suffix("_last")
+    df_count = grouped.count().add_suffix("_count")
+    df_missing = grouped.count().eq(0).astype(int).add_suffix("_missing")
+
+    df_delta = (
+        df_last.rename(columns=lambda c: c.replace("_last", "")) -
+        df_first.rename(columns=lambda c: c.replace("_first", ""))
+    ).add_suffix("_delta")
+
+    df_range = (
+        df_max.rename(columns=lambda c: c.replace("_max", "")) -
+        df_min.rename(columns=lambda c: c.replace("_min", ""))
+    ).add_suffix("_range")
+
+    df_features = pd.concat(
+        [
+            df_mean, df_median, df_min, df_max, df_std,
+            df_first, df_last, df_delta, df_count, df_missing, df_range
+        ],
+        axis=1
+    )
+
+    # Fill remaining NaNs
+    df_features = df_features.fillna(df_features.median(numeric_only=True))
 
     # Fill missing biometrics: median for continuous, mode for Gender.
     # Would love to drop it but too many records are missing it.
-    continuous_biometrics = [c for c in biometric_columns if c not in {"RecordID", "Gender"}]
+    continuous_biometrics = [
+        c for c in biometric_columns if c not in {"RecordID", "Gender"}]
     bio_medians = df_all[continuous_biometrics].median()
-    df_all[continuous_biometrics] = df_all[continuous_biometrics].fillna(bio_medians)
+    df_all[continuous_biometrics] = df_all[continuous_biometrics].fillna(
+        bio_medians)
     gender_mode = df_all["Gender"].mode()[0]
     df_all["Gender"] = df_all["Gender"].fillna(gender_mode)
 
-    df_features = pd.concat([df_mean, df_median, df_min, df_max, df_std], axis=1)
-
     # One-hot encode ICUType
-    icu_dummies = pd.get_dummies(df_all[["RecordID", "ICUType"]], columns=["ICUType"], dummy_na=True)
-    icu_dummies = icu_dummies.drop_duplicates(subset="RecordID").set_index("RecordID").astype(float)
+    icu_dummies = pd.get_dummies(df_all[["RecordID", "ICUType"]], columns=[
+                                 "ICUType"], dummy_na=True)
+    icu_dummies = icu_dummies.drop_duplicates(
+        subset="RecordID").set_index("RecordID").astype(float)
     df_features = df_features.join(icu_dummies)
 
     # Add the biometrics, unaggregated.
-    df_features = df_features.join(df_all[biometric_columns].drop_duplicates(subset="RecordID").set_index("RecordID"), how="left")
+    df_features = df_features.join(df_all[biometric_columns].drop_duplicates(
+        subset="RecordID").set_index("RecordID"), how="left")
 
     # Sort columns to guarantee consistent feature order across datasets.
     df_features = df_features[sorted(df_features.columns)]
@@ -129,7 +156,6 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
         return rus.fit_resample(df_features, outcomes)
 
     return df_features, outcomes
-
 def _load_outcomes(data_set: str, data_root: str) -> pd.DataFrame:
     """
     Load survival outcomes for the selected dataset.

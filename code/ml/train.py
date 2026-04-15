@@ -104,14 +104,14 @@ def ann() -> None:
 
     param_dist = {
         # Number of features, so we'll try a range of neurons around that.
-        'model__neurons': [32, 64, 128, 256],
+        'model__neurons': [10, 16, 32, 64, 128, 256],
         # We avoid overfitting bc we prefer a higher recall. So high dropout rate will prevent this.
-        'model__dropout_rate': [0.3, 0.5, 0.7],
+        'model__dropout_rate': [0.1, 0.3, 0.5, 0.7],
         # Regularize well across patients by trying a range of L2 regularization strengths.
         'model__l2_reg': [0.001, 0.01, 0.1],
         # Dataset is rather small so batches should not be too high.
-        'batch_size': [16, 32, 64],
-        'epochs': [50, 100]
+        'batch_size': [16, 32, 64, 100],
+        'epochs': [50, 100, 200]
     }
 
     early_stop = EarlyStopping(patience=10, restore_best_weights=True)

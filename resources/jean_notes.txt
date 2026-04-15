@@ -1,0 +1,80 @@
+Logistic Regression after some hyperparameter tuning.
+
+| Metric     | No Risk | Risk |
+|------------|---------|------|
+| Precision  | 0.78    | 0.67 |
+| Recall     | 0.81    | 0.62 |
+| F1-score   | 0.80    | 0.64 |
+| Support    | 2483    | 1517 |
+
+| Metric           | Score |
+|------------------|-------|
+| Overall Accuracy | 0.74  |
+| ROC-AUC          | 0.80  |
+
+| Metric    | Macro Avg | Weighted Avg |
+|-----------|-----------|--------------|
+| Precision | 0.72      | 0.74         |
+| Recall    | 0.72      | 0.74         |
+| F1-score  | 0.72      | 0.74         |
+| Support   | 4000      | 4000         |
+
+
+Hyperparameter tuning for recall
+Best parameters found:
+
+| Parameter | Value  |
+|-----------|--------|
+| C         | 1.6238 |
+| l1_ratio  | 0.60   |
+| max_iter  | 400    |
+| solver    | saga   |
+Metrics for Logistic Regression:
+
+| Metric     | No Risk | Risk |
+|------------|---------|------|
+| Precision  | 0.77    | 0.68 |
+| Recall     | 0.83    | 0.58 |
+| F1-score   | 0.80    | 0.63 |
+| Support    | 2483    | 1517 |
+
+| Metric           | Score |
+|------------------|-------|
+| Overall Accuracy | 0.74  |
+| ROC-AUC          | 0.80  |
+
+| Metric    | Macro Avg | Weighted Avg |
+|-----------|-----------|--------------|
+| Precision | 0.72      | 0.73         |
+| Recall    | 0.71      | 0.74         |
+| F1-score  | 0.71      | 0.73         |
+
+
+Best parameters found:
+
+| Parameter         | Value |
+|-------------------|-------|
+| max_depth         | 20    |
+| max_features      | sqrt  |
+| min_samples_leaf  | 2     |
+| min_samples_split | 2     |
+| n_estimators      | 200   |
+Metrics for Random Forest:
+
+| Metric     | No Risk | Risk |
+|------------|---------|------|
+| Precision  | 0.76    | 0.68 |
+| Recall     | 0.84    | 0.57 |
+| F1-score   | 0.80    | 0.62 |
+| Support    | 2483    | 1517 |
+
+| Metric           | Score |
+|------------------|-------|
+| Overall Accuracy | 0.74  |
+| ROC-AUC          | 0.80  |
+
+| Metric    | Macro Avg | Weighted Avg |
+|-----------|-----------|--------------|
+| Precision | 0.72      | 0.73         |
+| Recall    | 0.70      | 0.74         |
+| F1-score  | 0.71      | 0.73         |

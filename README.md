@@ -15,7 +15,7 @@ In here you will find the following project structure:
 │   ├── ui                   # This contains source code for Graphical User Interface used for Demo of ML Model.
 │   ├── main.py              # This contains the entry point to launch the UI demo.
 │   ├── ml                   # This contains source code used to train models.
-│   │   ├── evaluation.ipynb # This is a Jupyer notebook containing our evaluation of the distinct models we trained.
+│   │   ├── ann.ipynb        # This is a Jupyer notebook containing our evaluation of the ANN model.
 │   └── models               # This contains the models themselves as well as scaler objects for loading.
 ├── data
 │   ├── outcomes             # This contains the outcomes of one of the three sets, respective to the subdirectory suffix.

@@ -22,6 +22,16 @@ from sklearn.metrics import (
 warnings.filterwarnings("ignore")
 
 
+def undersample(X, y, random_state=42):
+    rng = np.random.RandomState(random_state)
+    died = np.where(y == 1)[0]
+    survived = np.where(y == 0)[0]
+    survived_sampled = rng.choice(survived, size=len(died), replace=False)
+    indices = np.concatenate([died, survived_sampled])
+    rng.shuffle(indices)
+    return X[indices], y[indices]
+
+
 def find_best_threshold(y_true, y_prob):
     best_f1, best_thresh = 0, 0.5
     for thresh in np.arange(0.2, 0.6, 0.01):
@@ -163,6 +173,10 @@ def main():
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
+
+    print(f"Before undersampling: {np.bincount(y_train.astype(int))}")
+    X_train, y_train = undersample(X_train, y_train)
+    print(f"After undersampling:  {np.bincount(y_train.astype(int))}")
 
     with open(os.path.join(args.output_dir, "scaler.pkl"), "wb") as f:
         pickle.dump(scaler, f)

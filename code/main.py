@@ -10,22 +10,21 @@ low_risk  = {"age": "35", "gender": "female", "bun": "12", "weight": "70", "crea
 from ui.app import build_app
 from ui.config import FIELD_SPECS, REQUIRED_SPECS
 from ui.model_input import APP_STATE, build_model_input_df
-from joblib import load as load_scaler
+from joblib import load
 from pathlib import Path
-from tensorflow.keras.models import load_model
 
 MODELS_DIR = Path(__file__).resolve().parent / "models"
 
 def _load_model_and_scaler():
-    model_path = MODELS_DIR / "ann_model.keras"
-    scaler_path = MODELS_DIR / "ann_scaler.bin"
+    model_path = MODELS_DIR / "ann_model.joblib"
+    scaler_path = MODELS_DIR / "scaler.joblib"
 
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found at {model_path}")
     if not scaler_path.exists():
         raise FileNotFoundError(f"Scaler file not found at {scaler_path}")
 
-    return load_model(model_path), load_scaler(scaler_path)
+    return load(model_path), load(scaler_path)
 
 def _done_output_callback(final_text: str, required_answers: dict[str, str], optional_answers: dict[str, str]) -> str:
     merged_answers: dict[str, str] = dict(required_answers)

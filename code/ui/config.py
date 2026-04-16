@@ -6,16 +6,16 @@ from typing import Any, Final
 
 
 FieldSpec = dict[str, Any]
-AGGREGATE_SUFFIXES: tuple[str, ...] = ("mean", "median", "min", "max", "std")
+AGGREGATE_SUFFIXES: tuple[str, ...] = ("delta", "first", "last", "max", "mean", "median", "min", "missing", "range", "std")
 PROCESSING_REPLY: Final[str] = "Captured processing signal. Assessing risk of acute adverse event based on provided information..."
 FIELD_SPECS: list[FieldSpec] = [
     {"name": "age", "question": "Age (years)", "required": True, "type": "int", "min": 0, "max": 120, "direct_column": "Age", "median": 68.0},
-    {"name": "gender", "question": "Gender", "required": False, "type": "choice", "choices": ["male", "female", "other"], "direct_column": "Gender", "median": 1.0},
     {"name": "bun", "question": "BUN (mg/dL)", "required": True, "type": "float", "min": 0, "feature_base": "BUN", "median": 19.75},
     {"name": "weight", "question": "Weight (kg)", "required": True, "type": "float", "min": 0, "direct_column": "Weight", "median": 80.0},
     {"name": "creatinine", "question": "Creatinine (mg/dL)", "required": True, "type": "float", "min": 0, "feature_base": "Creatinine", "median": 0.95},
     {"name": "gcs", "question": "GCS score", "required": True, "type": "int", "min": 3, "max": 15, "feature_base": "GCS", "median": 12.087121212121213},
     {"name": "height", "question": "Height (cm)", "required": False, "type": "float", "min": 0, "direct_column": "Height", "median": 170.2},
+    {"name": "gender", "question": "Gender", "required": False, "type": "choice", "choices": ["male", "female", "other"], "direct_column": "Gender", "median": 1.0},
     {"name": "icu_type", "question": "ICUType", "required": False, "type": "choice", "choices": [("1: Coronary Care Unit", "1"), ("2: Cardiac Surgery Recovery Unit", "2"), ("3: Medical ICU", "3"), ("4: Surgical ICU", "4")], "median": 3.0, "onehot_defaults": {"ICUType_1.0": 0.0, "ICUType_2.0": 0.0, "ICUType_3.0": 0.0, "ICUType_4.0": 0.0, "ICUType_nan": 0.0}},
     {"name": "albumin", "question": "Albumin (g/dL)", "required": False, "type": "float", "feature_base": "Albumin", "median": 2.9},
     {"name": "alp", "question": "ALP (IU/L)", "required": False, "type": "float", "feature_base": "ALP", "median": 76.0},

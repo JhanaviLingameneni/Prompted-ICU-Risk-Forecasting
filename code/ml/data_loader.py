@@ -53,8 +53,7 @@ def clean_patient_data(patient_file: str) -> pd.DataFrame:
     df["RecordID"] = int(recordid)
     return df
 
-
-def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
+def process_dataset(data_set: str, undersample: bool = False):
     """
     Loads and processes the patient data from the specified directory.
     Each set is expected to reside in a directory named
@@ -101,7 +100,6 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
     df_std = grouped.std(ddof=0).add_suffix("_std")
     df_first = grouped.first().add_suffix("_first")
     df_last = grouped.last().add_suffix("_last")
-    df_count = grouped.count().add_suffix("_count")
     df_missing = grouped.count().eq(0).astype(int).add_suffix("_missing")
 
     df_delta = (
@@ -156,6 +154,7 @@ def process_dataset(data_set: str, undersample: bool = False) -> pd.DataFrame:
         return rus.fit_resample(df_features, outcomes)
 
     return df_features, outcomes
+
 def _load_outcomes(data_set: str, data_root: str) -> pd.DataFrame:
     """
     Load survival outcomes for the selected dataset.

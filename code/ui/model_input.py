@@ -36,8 +36,12 @@ def _build_default_model_row() -> dict[str, float]:
         feature_base = field.get("feature_base")
         if feature_base is not None:
             for suffix in AGGREGATE_SUFFIXES:
-                # For single readings, STD should be 0.
-                row[f"{feature_base}_{suffix}"] = 0.0 if suffix == "std" else median
+                if suffix in {"delta", "range", "std"}:
+                    row[f"{feature_base}_{suffix}"] = 0.0 # No delta, range or std if missing
+                elif suffix == "missing":
+                    row[f"{feature_base}_{suffix}"] = 1 # Default is missing if not provided.
+                else:
+                    row[f"{feature_base}_{suffix}"] = median
 
     return row
 
@@ -101,14 +105,17 @@ def build_model_input_df(answers: dict[str, str]) -> pd.DataFrame:
         for suffix in AGGREGATE_SUFFIXES:
             column = f"{feature_base}_{suffix}"
             if column in row:
-                row[column] = 0.0 if suffix == "std" else vital_value
+                if suffix == "missing":
+                    row[column] = 0 # We have a reading, so not missing
+                elif suffix in {"delta", "range", "std"}: # Delta, range, and std are 0 for a single reading
+                    row[column] = 0.0
+                else:
+                    row[column] = vital_value
 
     return pd.DataFrame([row], columns=MODEL_FEATURE_COLUMNS)
 
 
 def _to_float(value: str | float | int | None) -> float | None:
-    if value is None or isinstance(value, str): # Any string should be considered None
-        return None
     try:
         return float(value)
     except (ValueError, TypeError):

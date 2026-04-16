@@ -6,7 +6,7 @@ from typing import Any, Final
 
 
 FieldSpec = dict[str, Any]
-AGGREGATE_SUFFIXES: tuple[str, ...] = ("count", "delta", "first", "last", "max", "mean", "median", "min", "missing", "range", "std")
+AGGREGATE_SUFFIXES: tuple[str, ...] = ("delta", "first", "last", "max", "mean", "median", "min", "missing", "range", "std")
 PROCESSING_REPLY: Final[str] = "Captured processing signal. Assessing risk of acute adverse event based on provided information..."
 FIELD_SPECS: list[FieldSpec] = [
     {"name": "age", "question": "Age (years)", "required": True, "type": "int", "min": 0, "max": 120, "direct_column": "Age", "median": 68.0},

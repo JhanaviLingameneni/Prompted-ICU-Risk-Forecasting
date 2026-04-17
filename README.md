@@ -11,19 +11,20 @@ In addition to the machine learning models, this repository also contains a grap
 In here you will find the following project structure:
 
 ```bash
-├── code                     # This contains all source code.
-│   ├── ui                   # This contains source code for Graphical User Interface used for Demo of ML Model.
-│   ├── main.py              # This contains the entry point to launch the UI demo.
-│   ├── ml                   # This contains source code used to train models.
-│   │   ├── ann.ipynb        # This is a Jupyer notebook containing our evaluation of the ANN model.
-│   └── models               # This contains the models themselves as well as scaler objects for loading.
+├── code                      # This contains all source code.
+│   ├── ui                    # This contains source code for Graphical User Interface used for Demo of ML Model.
+│   ├── main.py               # This contains the entry point to launch the UI demo.
+│   ├── score.c               # This is the official scoring from the dataset challenge.
+│   ├── ml                    # This contains source code used to train models.
+│   │   ├── all_models.ipynb  # This is a Jupyer notebook containing our evaluation of the models.
+│   └── models                # This contains the models themselves as well as scaler objects for loading.
 ├── data
-│   ├── outcomes             # This contains the outcomes of one of the three sets, respective to the subdirectory suffix.
-│   ├── set-a                # This is the training data.
-│   ├── set-b                # This is the test data.
-│   ├── set-c                # This is the validation data.
-├── requirements.txt         # This contains the dependencies used in this project.
-├── resources                # This contains notes and text resources.
+│   ├── outcomes              # This contains the outcomes of one of the three sets, respective to the subdirectory suffix.
+│   ├── set-a                 # This is the training data.
+│   ├── set-b                 # This is the test data.
+│   ├── set-c                 # This is the validation data.
+├── requirements.txt          # This contains the dependencies used in this project.
+├── resources                 # This contains notes and text resources.
 ```
 
 ## Installation
@@ -34,6 +35,7 @@ To get started:
     ```python
     pip install -r requirements
     ```
+3. (Optional) [GCC](https://gcc.gnu.org/install/) for running the scoring calculation C script.
 
 ## Usage
 ### Building Models
@@ -56,6 +58,13 @@ To run the GUI simply run:
 python code/main.py
 ```
 This will start a webserver on your local machine on http://127.0.0.1:7860
+
+### Running Scoring
+1. Run all Cells within the Jupyter Notebook
+2. Run `make` to compile the C script
+3. Run one of the Make commands (might need to install with Windows):
+  - make score_ann -> Will run scoring for ANN model
+  - make score_grad_boost -> Will run scoring for Gradient Boost model
 
 ## Authors
 - Jean Luis Urena

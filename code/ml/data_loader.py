@@ -115,7 +115,7 @@ def process_dataset(data_set: str, undersample: bool = False):
     df_features = pd.concat(
         [
             df_mean, df_median, df_min, df_max, df_std,
-            df_first, df_last, df_delta, df_count, df_missing, df_range
+            df_first, df_last, df_delta, df_missing, df_range
         ],
         axis=1
     )
@@ -178,6 +178,6 @@ def _load_outcomes(data_set: str, data_root: str) -> pd.DataFrame:
 
     # We only care about RecordID and Survival
     df = pd.read_csv(outcomes_file_path, usecols=["RecordID", "Survival", "In-hospital_death"])
-    df["Death"] = ((df["Survival"] != -1) | (df["In-hospital_death"] == 1)).astype(int)
+    df["Death"] = (df["In-hospital_death"] == 1).astype(int)
     df = df.drop(columns=["Survival", "In-hospital_death"])
     return df.set_index("RecordID")

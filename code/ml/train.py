@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report, roc_auc_score, precision_score, recall_score, make_scorer
-from sklearn.model_selection import GridSearchCV, PredefinedSplit, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, PredefinedSplit, RandomizedSearchCV, StratifiedKFold
 try:
     from .data_loader import process_dataset
 except ImportError:
@@ -80,6 +80,21 @@ def random_forest() -> RandomForestClassifier:
         y_val,
         param_grid,
     )
+
+def gradient_boosting() -> GradientBoostingClassifier:
+    params = {
+        "n_estimators": [100, 200],
+        "learning_rate": [0.01, 0.05],
+        "max_depth": [3, 4],
+        "subsample": [0.7, 0.8],
+        "min_samples_leaf": [5, 10],
+    }
+
+    estimator = GradientBoostingClassifier(random_state=42)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    grid = GridSearchCV(estimator, params, cv=cv, scoring="roc_auc", n_jobs=-1, refit=True)
+    grid.fit(x_train_scaled, y_train)
+    print(grid.best_params_)
 
 
 # Best params {'model__neurons': 32, 'model__l2_reg': 0.001, 'model__dropout_rate': 0.7, 'epochs': 100, 'batch_size': 32}

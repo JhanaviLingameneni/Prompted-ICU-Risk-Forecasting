@@ -13,3 +13,6 @@ score_ann:
 
 score_grad_boost:
 	./$(TARGET) code/models/GradientBoosting_results.csv data/outcomes/outcomes-b.txt
+
+score_lstm:
+	./$(TARGET) code/models/LSTM_results.csv data/outcomes/outcomes-b.txt

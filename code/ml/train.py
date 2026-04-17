@@ -4,6 +4,8 @@ Module contains the training code for the ML models.
 from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, LSTM
+from tensorflow.keras.metrics import AUC, Precision, Recall
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -167,6 +169,54 @@ def ann() -> None:
     print("Best parameters found: ", search_result.best_params_)
     # compare_models({"ANN": search_result.best_estimator_})
     return search_result.best_estimator_
+
+def lstm():
+    """
+    Trains an LSTM model on the same scaled data.
+    Since the dataset is tabular, each feature is treated like one timestep.
+    Input shape becomes: (samples, features, 1)
+    """
+
+    x_train_lstm = x_train_scaled.reshape((x_train_scaled.shape[0], x_train_scaled.shape[1], 1))
+    x_val_lstm = x_val_scaled.reshape((x_val_scaled.shape[0], x_val_scaled.shape[1], 1))
+
+    model = Sequential([
+        Input(shape=(x_train_lstm.shape[1], 1)),
+        LSTM(64, return_sequences=False),
+        Dropout(0.4),
+        Dense(32, activation="relu"),
+        Dropout(0.2),
+        Dense(1, activation="sigmoid")
+    ])
+
+    model.compile(
+        optimizer="adam",
+        loss="binary_crossentropy",
+        metrics=[
+            "accuracy",
+            AUC(name="auc"),
+            Precision(name="precision"),
+            Recall(name="recall"),
+        ],
+    )
+
+    early_stop = EarlyStopping(
+        monitor="val_loss",
+        patience=8,
+        restore_best_weights=True
+    )
+
+    history = model.fit(
+        x_train_lstm,
+        y_train,
+        validation_data=(x_val_lstm, y_val),
+        epochs=80,
+        batch_size=32,
+        callbacks=[early_stop],
+        verbose=1
+    )
+
+    return model, history
 
 ### HELPERS ###
 def compare_models(models: Mapping[str, BaseEstimator]) -> None:

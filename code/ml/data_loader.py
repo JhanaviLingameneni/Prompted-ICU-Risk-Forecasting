@@ -100,6 +100,7 @@ def process_dataset(data_set: str, undersample: bool = False):
     df_std = grouped.std(ddof=0).add_suffix("_std")
     df_first = grouped.first().add_suffix("_first")
     df_last = grouped.last().add_suffix("_last")
+    df_count = grouped.count().add_suffix("_count")
     df_missing = grouped.count().eq(0).astype(int).add_suffix("_missing")
 
     df_delta = (

@@ -61,10 +61,12 @@ This will start a webserver on your local machine on http://127.0.0.1:7860
 
 ### Running Scoring
 1. Run all Cells within the Jupyter Notebook
-2. Run `make` to compile the C script
-3. Run one of the Make commands (might need to install with Windows):
+2. Run `make` or `gcc -o score code/score.c -lm` to compile the C script
+3. Jupyter Notebook will then be able to run the scoring
+4. (Optionally) Run one of the Make commands (might need to install with Windows):
   - make score_ann -> Will run scoring for ANN model
   - make score_grad_boost -> Will run scoring for Gradient Boost model
+  - score_lstm -> Will run scoring for LSTM Model
 
 ## Authors
 - Jean Luis Urena

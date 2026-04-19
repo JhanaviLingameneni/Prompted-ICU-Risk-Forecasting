@@ -4,12 +4,14 @@ Module contains the training code for the ML models.
 from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, LSTM
+from tensorflow.keras.metrics import AUC, Precision, Recall
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report, roc_auc_score, precision_score, recall_score, make_scorer
-from sklearn.model_selection import GridSearchCV, PredefinedSplit, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, PredefinedSplit, RandomizedSearchCV, StratifiedKFold
 try:
     from .data_loader import process_dataset
 except ImportError:
@@ -80,6 +82,21 @@ def random_forest() -> RandomForestClassifier:
         y_val,
         param_grid,
     )
+
+def gradient_boosting() -> GradientBoostingClassifier:
+    params = {
+        "n_estimators": [100, 200],
+        "learning_rate": [0.01, 0.05],
+        "max_depth": [3, 4],
+        "subsample": [0.7, 0.8],
+        "min_samples_leaf": [5, 10],
+    }
+
+    estimator = GradientBoostingClassifier(random_state=42)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    grid = GridSearchCV(estimator, params, cv=cv, scoring="roc_auc", n_jobs=-1, refit=True)
+    grid.fit(x_train_scaled, y_train)
+    print(grid.best_params_)
 
 
 # Best params {'model__neurons': 32, 'model__l2_reg': 0.001, 'model__dropout_rate': 0.7, 'epochs': 100, 'batch_size': 32}
@@ -152,6 +169,54 @@ def ann() -> None:
     print("Best parameters found: ", search_result.best_params_)
     # compare_models({"ANN": search_result.best_estimator_})
     return search_result.best_estimator_
+
+def lstm():
+    """
+    Trains an LSTM model on the same scaled data.
+    Since the dataset is tabular, each feature is treated like one timestep.
+    Input shape becomes: (samples, features, 1)
+    """
+
+    x_train_lstm = x_train_scaled.reshape((x_train_scaled.shape[0], x_train_scaled.shape[1], 1))
+    x_val_lstm = x_val_scaled.reshape((x_val_scaled.shape[0], x_val_scaled.shape[1], 1))
+
+    model = Sequential([
+        Input(shape=(x_train_lstm.shape[1], 1)),
+        LSTM(64, return_sequences=False),
+        Dropout(0.4),
+        Dense(32, activation="relu"),
+        Dropout(0.2),
+        Dense(1, activation="sigmoid")
+    ])
+
+    model.compile(
+        optimizer="adam",
+        loss="binary_crossentropy",
+        metrics=[
+            "accuracy",
+            AUC(name="auc"),
+            Precision(name="precision"),
+            Recall(name="recall"),
+        ],
+    )
+
+    early_stop = EarlyStopping(
+        monitor="val_loss",
+        patience=8,
+        restore_best_weights=True
+    )
+
+    history = model.fit(
+        x_train_lstm,
+        y_train,
+        validation_data=(x_val_lstm, y_val),
+        epochs=80,
+        batch_size=32,
+        callbacks=[early_stop],
+        verbose=1
+    )
+
+    return model, history
 
 ### HELPERS ###
 def compare_models(models: Mapping[str, BaseEstimator]) -> None:

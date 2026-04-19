@@ -100,6 +100,7 @@ def process_dataset(data_set: str, undersample: bool = False):
     df_std = grouped.std(ddof=0).add_suffix("_std")
     df_first = grouped.first().add_suffix("_first")
     df_last = grouped.last().add_suffix("_last")
+    df_count = grouped.count().add_suffix("_count")
     df_missing = grouped.count().eq(0).astype(int).add_suffix("_missing")
 
     df_delta = (
@@ -115,7 +116,7 @@ def process_dataset(data_set: str, undersample: bool = False):
     df_features = pd.concat(
         [
             df_mean, df_median, df_min, df_max, df_std,
-            df_first, df_last, df_delta, df_count, df_missing, df_range
+            df_first, df_last, df_delta, df_missing, df_range
         ],
         axis=1
     )
@@ -178,6 +179,6 @@ def _load_outcomes(data_set: str, data_root: str) -> pd.DataFrame:
 
     # We only care about RecordID and Survival
     df = pd.read_csv(outcomes_file_path, usecols=["RecordID", "Survival", "In-hospital_death"])
-    df["Death"] = ((df["Survival"] != -1) | (df["In-hospital_death"] == 1)).astype(int)
+    df["Death"] = (df["In-hospital_death"] == 1).astype(int)
     df = df.drop(columns=["Survival", "In-hospital_death"])
     return df.set_index("RecordID")

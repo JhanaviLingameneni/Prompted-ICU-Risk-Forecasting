@@ -3,28 +3,30 @@ Main entry point for the application.
 Used for demoing the Risk Assessment model.
 """
 
-"""
-high_risk = {"age": "80", "gender": "male", "bun": "60", "weight": "55", "creatinine": "3.5", "gcs": "5"}
-low_risk  = {"age": "35", "gender": "female", "bun": "12", "weight": "70", "creatinine": "0.7", "gcs": "15"}
-"""
+from pathlib import Path
+from joblib import load
+from tensorflow.keras.models import load_model
+
 from ui.app import build_app
 from ui.config import FIELD_SPECS, REQUIRED_SPECS
 from ui.model_input import APP_STATE, build_model_input_df
-from joblib import load
-from pathlib import Path
 
 MODELS_DIR = Path(__file__).resolve().parent / "models"
 
+
 def _load_model_and_scaler():
-    model_path = MODELS_DIR / "ann_model.joblib"
-    scaler_path = MODELS_DIR / "scaler.joblib"
+    model_path = MODELS_DIR / "lstm_model.keras"
+    scaler_path = MODELS_DIR / "lstm_scaler.bin"
 
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found at {model_path}")
     if not scaler_path.exists():
         raise FileNotFoundError(f"Scaler file not found at {scaler_path}")
 
-    return load(model_path), load(scaler_path)
+    model = load_model(model_path)
+    scaler = load(scaler_path)
+    return model, scaler
+
 
 def _done_output_callback(final_text: str, required_answers: dict[str, str], optional_answers: dict[str, str]) -> str:
     merged_answers: dict[str, str] = dict(required_answers)
@@ -33,23 +35,18 @@ def _done_output_callback(final_text: str, required_answers: dict[str, str], opt
     model_input_df = build_model_input_df(merged_answers)
     APP_STATE["latest_model_input_df"] = model_input_df
 
-    # missing_fields = []
-    # for field in FIELD_SPECS:
-    #     value = merged_answers.get(field["name"])
-    #     if value is None or value == "" or value == "skipped":
-    #         missing_fields.append(field["name"])
-    # if len([field for field in missing_fields if field in REQUIRED_SPECS]) > 0:
-    #     missing_list = ", ".join(missing_fields)
-    #     return f"{final_text}\n\nWarning: Missing or invalid values for fields: {missing_list}. Please review your answers."
-
     model, scaler = _load_model_and_scaler()
-    # Both training (data_loader) and inference (model_input) sort columns alphabetically,
-    # so the order is guaranteed to match without any extra alignment step.
+
+    # Scale tabular input
     x = scaler.transform(model_input_df)
-    prediction = model.predict(x, verbose=0)
+
+    # Reshape for LSTM: (samples, features, 1)
+    x_lstm = x.reshape((x.shape[0], x.shape[1], 1))
+
+    prediction = model.predict(x_lstm, verbose=0)
     risk_score = float(prediction.ravel()[0])
 
-    if risk_score > 0.4:  # Threshold low. Prefer false positives over false negatives.
+    if risk_score > 0.4:
         return (
             "<div style='text-align:center; margin-top: 12px;'>"
             "<div style='font-size: 64px; font-weight: 900; color: #d60000; letter-spacing: 2px;'>RISK</div>"

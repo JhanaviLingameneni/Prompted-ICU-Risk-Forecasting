@@ -17,7 +17,12 @@ In here you will find the following project structure:
 │   ├── score.c               # This is the official scoring from the dataset challenge.
 │   ├── ml                    # This contains source code used to train models.
 │   │   ├── all_models.ipynb  # This is a Jupyer notebook containing our evaluation of the models.
-│   └── models                # This contains the models themselves as well as scaler objects for loading.
+│   └── artifacts             # Directory containing built artifacts
+│   │   ├── models            # Directory containing saved model objects and scalers
+│   │   ├── results           # Directory containing results for scoring
+│   │   └── scripts           # Directory containing scripts
+│   │      ├── score.c        # Official Challenge scoring script
+
 ├── data
 │   ├── outcomes              # This contains the outcomes of one of the three sets, respective to the subdirectory suffix.
 │   ├── set-a                 # This is the training data.
@@ -41,21 +46,21 @@ To get started:
 ### Building Models
 The following models are available for re-training and saving:
 - Artificial Neural Network using Tensorflow + Keras
-- TODO
-- TODO
+- Long Short-Term Memory Neural Network using Scikit-Learn
+- Gradient Boosting using Scikit-Learn
 
-To build all of these models simply run:
-```bash
-python code/ml/main.py
-```
-The models, along with their scaler, will then be saved into the `code/models` directory with their respective names. ie `ann_model.keras` and `ann_scaler.bin`.
+To build all of these models:
+1. Uncomment the second to last cell in the `code/ml/all_models.ipynb` Jupyter Notebook.
+2. Run the entire `code/ml/all_models.ipynb` Jupyter Notebook.
+
+The models, along with their scaler, will then be saved into the `code/artifacts/models` directory with their respective names. ie `ann_model.joblib` and `scaler_2d.joblib`.
 > [!NOTE]
 > It is not required to re-build models, as they are already checked into the repository along with their scalers.
 
 ### Launching Demo
 To run the GUI simply run:
 ```bash
-python code/main.py
+python code/ui/main.py
 ```
 This will start a webserver on your local machine on http://127.0.0.1:7860
 
@@ -64,9 +69,11 @@ This will start a webserver on your local machine on http://127.0.0.1:7860
 2. Run `make` or `gcc -o score code/score.c -lm` to compile the C script
 3. Jupyter Notebook will then be able to run the scoring
 4. (Optionally) Run one of the Make commands (might need to install with Windows):
-  - make score_ann -> Will run scoring for ANN model
-  - make score_grad_boost -> Will run scoring for Gradient Boost model
-  - score_lstm -> Will run scoring for LSTM Model
+  - `make score_ann` -> Will run scoring for ANN model
+  - `make score_grad_boost` -> Will run scoring for Gradient
+  Boost model
+  - `make score_lstm` -> Will run scoring for LSTM Model
+  - `make score_all` -> Will run scoring for all models
 
 ## Authors
 - Jean Luis Urena

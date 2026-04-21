@@ -6,8 +6,8 @@ from collections.abc import Callable
 
 import gradio as gr
 
-from ui.config import OPTIONAL_TAB_ID, REQUIRED_TAB_ID
-from ui.handlers import (
+from config import OPTIONAL_TAB_ID, REQUIRED_TAB_ID
+from handlers import (
     change_optional_field,
     done_intake,
     initialize,

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from ui.config import AGGREGATE_SUFFIXES, FIELD_SPECS
+from config import AGGREGATE_SUFFIXES, FIELD_SPECS
 
 
 APP_STATE: dict[str, pd.DataFrame | None] = {"latest_model_input_df": None}

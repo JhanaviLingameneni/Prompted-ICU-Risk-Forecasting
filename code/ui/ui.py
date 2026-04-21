@@ -7,8 +7,8 @@ from typing import Any, Mapping
 
 import gradio as gr
 
-from ui.config import OPTIONAL_SPECS, REQUIRED_SPECS, FieldSpec
-from ui.core import (
+from config import OPTIONAL_SPECS, REQUIRED_SPECS, FieldSpec
+from core import (
     current_field,
     field_by_name,
     field_header,

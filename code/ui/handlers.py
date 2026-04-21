@@ -6,14 +6,14 @@ from typing import Any
 
 import gradio as gr
 
-from ui.config import (
+from config import (
     OPTIONAL_SPECS,
     OPTIONAL_TAB_ID,
     PROCESSING_REPLY,
     REQUIRED_SPECS,
     REQUIRED_TAB_ID,
 )
-from ui.core import (
+from core import (
     all_summary,
     current_field,
     field_by_name,
@@ -22,7 +22,7 @@ from ui.core import (
     required_complete,
     validate_input,
 )
-from ui.ui import optional_ui, required_ui, tab_update
+from ui import optional_ui, required_ui, tab_update
 
 def initialize():
     """

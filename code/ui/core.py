@@ -4,7 +4,7 @@ Core UI logic.
 
 from typing import Mapping, Sequence
 
-from ui.config import FIELD_SPECS, OPTIONAL_SPECS, REQUIRED_SPECS, FieldSpec
+from config import FIELD_SPECS, OPTIONAL_SPECS, REQUIRED_SPECS, FieldSpec
 
 
 def current_field(specs: Sequence[FieldSpec], index: int) -> FieldSpec | None:

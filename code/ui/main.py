@@ -5,25 +5,23 @@ Used for demoing the Risk Assessment model.
 
 from pathlib import Path
 from joblib import load
-from tensorflow.keras.models import load_model
 
-from ui.app import build_app
-from ui.config import FIELD_SPECS, REQUIRED_SPECS
-from ui.model_input import APP_STATE, build_model_input_df
+from app import build_app
+from model_input import APP_STATE, build_model_input_df
 
-MODELS_DIR = Path(__file__).resolve().parent / "models"
+MODELS_DIR = Path(__file__).resolve().parent.parent / "artifacts" / "models"
 
 
 def _load_model_and_scaler():
-    model_path = MODELS_DIR / "lstm_model.keras"
-    scaler_path = MODELS_DIR / "lstm_scaler.bin"
+    model_path = MODELS_DIR / "ann_model.joblib"
+    scaler_path = MODELS_DIR / "scaler_2d.joblib"
 
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found at {model_path}")
     if not scaler_path.exists():
         raise FileNotFoundError(f"Scaler file not found at {scaler_path}")
 
-    model = load_model(model_path)
+    model = load(model_path)
     scaler = load(scaler_path)
     return model, scaler
 
@@ -40,13 +38,12 @@ def _done_output_callback(final_text: str, required_answers: dict[str, str], opt
     # Scale tabular input
     x = scaler.transform(model_input_df)
 
-    # Reshape for LSTM: (samples, features, 1)
-    x_lstm = x.reshape((x.shape[0], x.shape[1], 1))
-
-    prediction = model.predict(x_lstm, verbose=0)
+    prediction = model.predict(x, verbose=0)
     risk_score = float(prediction.ravel()[0])
 
-    if risk_score > 0.4:
+    # LSTM threshold is 0.23
+    # Gradient Boosting threshold is 0.23
+    if risk_score > 0.35:
         return (
             "<div style='text-align:center; margin-top: 12px;'>"
             "<div style='font-size: 64px; font-weight: 900; color: #d60000; letter-spacing: 2px;'>RISK</div>"

@@ -13,7 +13,7 @@ MODELS_DIR = Path(__file__).resolve().parent.parent / "artifacts" / "models"
 
 
 def _load_model_and_scaler():
-    model_path = MODELS_DIR / "ann_model.joblib"
+    model_path = MODELS_DIR / "mlp_model.joblib"
     scaler_path = MODELS_DIR / "scaler_2d.joblib"
 
     if not model_path.exists():

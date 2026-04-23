@@ -19,9 +19,9 @@ $(TARGET): code/scripts/score.c
 clean:
 	$(RM) $(TARGET)
 
-score_ann:
-	@echo "Scoring ANN predictions..." && \
-		$(RUN) code/artifacts/results/ANN_predictions.csv data/outcomes/outcomes-b.txt
+score_mlp:
+	@echo "Scoring MLP predictions..." && \
+		$(RUN) code/artifacts/results/MLP_predictions.csv data/outcomes/outcomes-b.txt
 
 score_grad_boost:
 	@echo "Scoring Gradient Boosting predictions..." && \
@@ -31,4 +31,4 @@ score_lstm:
 	@echo "Scoring LSTM predictions..." && \
 		$(RUN) code/artifacts/results/LSTM_predictions.csv data/outcomes/outcomes-b.txt
 
-score_all: score_ann score_grad_boost score_lstm
+score_all: score_mlp score_grad_boost score_lstm

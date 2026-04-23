@@ -53,7 +53,7 @@ To build all of these models:
 1. Uncomment the second to last cell in the `code/ml/all_models.ipynb` Jupyter Notebook.
 2. Run the entire `code/ml/all_models.ipynb` Jupyter Notebook.
 
-The models, along with their scaler, will then be saved into the `code/artifacts/models` directory with their respective names. ie `ann_model.joblib` and `scaler_2d.joblib`.
+The models, along with their scaler, will then be saved into the `code/artifacts/models` directory with their respective names. ie `mlp_model.joblib` and `scaler_2d.joblib`.
 > [!NOTE]
 > It is not required to re-build models, as they are already checked into the repository along with their scalers.
 
@@ -69,7 +69,7 @@ This will start a webserver on your local machine on http://127.0.0.1:7860
 2. Run `make` or `gcc -o score code/score.c -lm` to compile the C script
 3. Jupyter Notebook will then be able to run the scoring
 4. (Optionally) Run one of the Make commands (might need to install with Windows):
-  - `make score_ann` -> Will run scoring for ANN model
+  - `make score_mlp` -> Will run scoring for MLP model
   - `make score_grad_boost` -> Will run scoring for Gradient
   Boost model
   - `make score_lstm` -> Will run scoring for LSTM Model
